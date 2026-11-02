@@ -1,0 +1,3235 @@
+openapi: 3.0.3
+info:
+  title: Bus Management System API
+  version: 1.0.0
+  description: API for Fleet, Routes, Fares, Trips, Live GPS Tracking, Payments, Tickets,
+    and Auditing.
+paths:
+  /api/:
+    get:
+      operationId: api_list
+      description: Retrieve fare history or filter for current active fares.
+      summary: List fares
+      parameters:
+      - in: query
+        name: active
+        schema:
+          type: boolean
+        description: If true, returns only currently active fares (effective_to is
+          null)
+      - in: query
+        name: route
+        schema:
+          type: string
+          format: uuid
+        description: Filter fares by Route UUID
+      tags:
+      - Fares
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fare'
+          description: ''
+    post:
+      operationId: api_create
+      description: Set a new fare for a route (Admin only). Automatically closes the
+        previous active fare.
+      summary: Configure a new route fare
+      tags:
+      - Fares
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fare'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fare'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fare'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fare'
+          description: ''
+  /api/admin/audit/:
+    get:
+      operationId: api_admin_audit_list
+      summary: View append-only system audit logs (Admin)
+      parameters:
+      - in: query
+        name: action
+        schema:
+          type: string
+      - in: query
+        name: actor
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: entity_id
+        schema:
+          type: string
+      - in: query
+        name: entity_type
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Admin - Audit
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+  /api/admin/buses/{id}/trips/:
+    get:
+      operationId: api_admin_buses_trips_list
+      summary: Get all trips for a bus with passenger count and revenue (Admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Admin - Reports & History
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBusTripReportList'
+          description: ''
+  /api/admin/fares/history/:
+    get:
+      operationId: api_admin_fares_history_list
+      summary: Get complete fare history across all routes with creator and timestamps
+        (Admin)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Admin - Reports & History
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFareHistoryList'
+          description: ''
+  /api/admin/reports/summary/:
+    get:
+      operationId: api_admin_reports_summary_retrieve
+      summary: Get revenue, passengers, and trip totals broken down by route, local
+        day, and bus
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      tags:
+      - Admin - Reports & History
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/admin/trips/:
+    get:
+      operationId: api_admin_trips_list
+      summary: Filter all trips with passenger count and revenue (Admin)
+      parameters:
+      - in: query
+        name: bus
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: route
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - ended
+      tags:
+      - Admin - Reports & History
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBusTripReportList'
+          description: ''
+  /api/buses/:
+    get:
+      operationId: api_buses_list
+      description: Retrieve a list of all physical buses. Can be filtered by route
+        or status.
+      summary: List all physical buses
+      parameters:
+      - in: query
+        name: route
+        schema:
+          type: string
+          format: uuid
+        description: Filter buses by Route UUID
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - maintenance
+          - retired
+        description: Filter buses by status
+      tags:
+      - Fleet - Buses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhysicalBus'
+          description: ''
+    post:
+      operationId: api_buses_create
+      description: Create a new physical bus (Admin only). Route assignment is optional.
+      summary: Register a new physical bus
+      tags:
+      - Fleet - Buses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhysicalBus'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PhysicalBus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhysicalBus'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalBus'
+          description: ''
+  /api/buses/{id}/:
+    get:
+      operationId: api_buses_retrieve
+      description: Get details of a single physical bus by its UUID.
+      summary: Retrieve a specific bus
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Buses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalBus'
+          description: ''
+    put:
+      operationId: api_buses_update
+      description: Full update of a physical bus (Admin only).
+      summary: Update a physical bus
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Buses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhysicalBus'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PhysicalBus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhysicalBus'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalBus'
+          description: ''
+    patch:
+      operationId: api_buses_partial_update
+      description: Update specific fields of a physical bus such as route or status
+        (Admin only).
+      summary: Partially update a physical bus
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Buses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPhysicalBus'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPhysicalBus'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPhysicalBus'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhysicalBus'
+          description: ''
+    delete:
+      operationId: api_buses_destroy
+      description: Delete a physical bus if it has no maintenance history. Otherwise,
+        set status to retired.
+      summary: Delete a physical bus
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Buses
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/buses/{id}/eta/:
+    get:
+      operationId: api_buses_eta_retrieve
+      summary: Get next fermata and ETA for all upcoming stops
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Tracking
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/buses/{id}/location/:
+    get:
+      operationId: api_buses_location_retrieve
+      summary: Get last known location of a specific bus
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Tracking
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusLiveState'
+          description: ''
+    post:
+      operationId: api_buses_location_create
+      description: Records GPS ping in history and updates live bus state if newer
+        than existing state.
+      summary: Send GPS ping from Cashier phone
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Tracking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationPingInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LocationPingInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LocationPingInput'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/buses/{id}/maintenance/:
+    get:
+      operationId: api_buses_maintenance_list
+      summary: Get maintenance history for a bus (Admin only)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Maintenance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceEvent'
+          description: ''
+    post:
+      operationId: api_buses_maintenance_create
+      description: Requires a reason. Rejected if the bus has an active trip or an
+        open maintenance event. Sets bus status to maintenance, creates MaintenanceEvent,
+        and writes an AuditLog row.
+      summary: Send a bus into maintenance (Cashier / Admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceStartInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MaintenanceStartInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MaintenanceStartInput'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceEvent'
+          description: ''
+  /api/buses/{id}/resume/:
+    post:
+      operationId: api_buses_resume_create
+      summary: Resume a bus from maintenance back to active (Admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Maintenance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceEvent'
+          description: ''
+  /api/buses/live/:
+    get:
+      operationId: api_buses_live_list
+      description: Passengers receive buses with an active trip only. Admins receive
+        all buses (including idle and maintenance).
+      summary: Get all live buses
+      tags:
+      - Tracking
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BusLiveState'
+          description: ''
+  /api/buses/search/:
+    get:
+      operationId: api_buses_search_list
+      summary: Search live buses by public bus number
+      parameters:
+      - in: query
+        name: number
+        schema:
+          type: integer
+        description: Public bus number (e.g., 124)
+        required: true
+      tags:
+      - Tracking
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BusLiveState'
+          description: ''
+  /api/directions/:
+    get:
+      operationId: api_directions_list
+      summary: List route directions (OSRM paths)
+      tags:
+      - Routes - Directions
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RouteDirection'
+          description: ''
+    post:
+      operationId: api_directions_create
+      summary: Create a route direction geometry
+      tags:
+      - Routes - Directions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteDirection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RouteDirection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RouteDirection'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteDirection'
+          description: ''
+  /api/directions/{id}/:
+    get:
+      operationId: api_directions_retrieve
+      summary: Retrieve route direction details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Directions
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteDirection'
+          description: ''
+    put:
+      operationId: api_directions_update
+      summary: Update route direction data
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Directions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteDirection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RouteDirection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RouteDirection'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteDirection'
+          description: ''
+    patch:
+      operationId: api_directions_partial_update
+      summary: Partially update route direction geometry/duration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Directions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRouteDirection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRouteDirection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRouteDirection'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteDirection'
+          description: ''
+    delete:
+      operationId: api_directions_destroy
+      summary: Delete a route direction
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Directions
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/fermatas/:
+    get:
+      operationId: api_fermatas_list
+      summary: List all fermatas
+      tags:
+      - Routes - Fermatas
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fermata'
+          description: ''
+    post:
+      operationId: api_fermatas_create
+      summary: Create a new fermata
+      tags:
+      - Routes - Fermatas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fermata'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fermata'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fermata'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fermata'
+          description: ''
+  /api/fermatas/{id}/:
+    get:
+      operationId: api_fermatas_retrieve
+      summary: Retrieve a fermata
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Fermatas
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fermata'
+          description: ''
+    put:
+      operationId: api_fermatas_update
+      summary: Update a fermata
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Fermatas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fermata'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fermata'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fermata'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fermata'
+          description: ''
+    patch:
+      operationId: api_fermatas_partial_update
+      summary: Partially update a fermata
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Fermatas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFermata'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFermata'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFermata'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fermata'
+          description: ''
+    delete:
+      operationId: api_fermatas_destroy
+      summary: Delete a fermata (Protected if in use)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Fermatas
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/health/:
+    get:
+      operationId: api_health_retrieve
+      summary: Health check endpoint (verifies database connectivity)
+      tags:
+      - System
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/maintenance/:
+    get:
+      operationId: api_maintenance_list
+      description: Retrieve maintenance logs (Accessible by Admin and Casher).
+      summary: List maintenance events
+      parameters:
+      - in: query
+        name: bus
+        schema:
+          type: string
+          format: uuid
+        description: Filter maintenance events by PhysicalBus UUID
+      - in: query
+        name: open
+        schema:
+          type: boolean
+        description: If true, returns only currently open maintenance events (ended_at
+          is null)
+      tags:
+      - Fleet - Maintenance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceEvent'
+          description: ''
+    post:
+      operationId: api_maintenance_create
+      description: Open a new maintenance event for a bus (Casher only). Automatically
+        sets bus status to maintenance.
+      summary: Start a maintenance event
+      tags:
+      - Fleet - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MaintenanceEvent'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MaintenanceEvent'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceEvent'
+          description: ''
+  /api/maintenance/{id}/:
+    get:
+      operationId: api_maintenance_retrieve
+      description: Get details of a single maintenance event by its UUID.
+      summary: Retrieve a maintenance event
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Maintenance
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceEvent'
+          description: ''
+    put:
+      operationId: api_maintenance_update
+      description: Update a maintenance event (Casher only).
+      summary: Update a maintenance event
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MaintenanceEvent'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MaintenanceEvent'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceEvent'
+          description: ''
+    patch:
+      operationId: api_maintenance_partial_update
+      description: Send ended_at to close an open maintenance event and automatically
+        restore the bus status to active.
+      summary: Close or update a maintenance event
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Fleet - Maintenance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenanceEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenanceEvent'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenanceEvent'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceEvent'
+          description: ''
+  /api/payments/{id}/:
+    get:
+      operationId: api_payments_retrieve
+      description: Polled by the passenger app to check if a payment has succeeded,
+        failed, or expired.
+      summary: Get current payment status
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Payments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/payments/initiate/:
+    post:
+      operationId: api_payments_initiate_create
+      description: Re-validates the trip QR token, locks in the current active route
+        fare, and creates a pending payment. Supports idempotency via the Idempotency-Key
+        header.
+      summary: Initiate a bus fare payment from a scanned QR token
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Unique key per payment attempt so retries never create duplicate
+          charges
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInitiate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentInitiate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentInitiate'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/payments/simulate/:
+    post:
+      operationId: api_payments_simulate_create
+      description: Allows triggering a payment webhook outcome during a live demo
+        when ENABLE_PAYMENT_SIMULATOR=True.
+      summary: Simulate payment provider confirmation for live demos
+      tags:
+      - Payments - Demo Simulator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulatePaymentInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SimulatePaymentInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SimulatePaymentInput'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/payments/webhook/{provider}/:
+    post:
+      operationId: api_payments_webhook_create
+      description: Verifies the X-Webhook-Signature header, logs a ProviderEvent idempotently,
+        validates the amount, and transitions the Payment from pending to succeeded/failed.
+      summary: Receive payment provider webhook notification
+      parameters:
+      - in: header
+        name: X-Webhook-Signature
+        schema:
+          type: string
+        description: HMAC-SHA256 hex digest of raw request body signed with PAYMENT_WEBHOOK_SECRET
+        required: true
+      - in: path
+        name: provider
+        schema:
+          type: string
+        required: true
+      tags:
+      - Payments - Webhook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/register/:
+    post:
+      operationId: api_register_create
+      description: Register a new user
+      summary: User Registration
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Registration failed. Validation errors are returned.
+  /api/routes/:
+    get:
+      operationId: api_routes_list
+      summary: List all bus routes
+      tags:
+      - Routes - Routes
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Route'
+          description: ''
+    post:
+      operationId: api_routes_create
+      summary: Create a new bus route
+      tags:
+      - Routes - Routes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Route'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Route'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+  /api/routes/{id}/:
+    get:
+      operationId: api_routes_retrieve
+      summary: Retrieve route details, stops, and geometry
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Routes
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+    put:
+      operationId: api_routes_update
+      summary: Update a route
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Routes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Route'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Route'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+    patch:
+      operationId: api_routes_partial_update
+      summary: Partially update a route
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Routes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoute'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRoute'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRoute'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+          description: ''
+    delete:
+      operationId: api_routes_destroy
+      summary: Delete a route (Protected if buses/fares attached)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Routes
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/stops/:
+    get:
+      operationId: api_stops_list
+      summary: List route stops
+      tags:
+      - Routes - Stops
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RouteStop'
+          description: ''
+    post:
+      operationId: api_stops_create
+      summary: Add a fermata stop to a route
+      tags:
+      - Routes - Stops
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteStop'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RouteStop'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RouteStop'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteStop'
+          description: ''
+  /api/stops/{id}/:
+    get:
+      operationId: api_stops_retrieve
+      summary: Retrieve a route stop
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Stops
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteStop'
+          description: ''
+    put:
+      operationId: api_stops_update
+      summary: Update a route stop
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Stops
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteStop'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RouteStop'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RouteStop'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteStop'
+          description: ''
+    patch:
+      operationId: api_stops_partial_update
+      summary: Partially update a route stop
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Stops
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRouteStop'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRouteStop'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRouteStop'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteStop'
+          description: ''
+    delete:
+      operationId: api_stops_destroy
+      summary: Delete a route stop
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Routes - Stops
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/tickets/:
+    get:
+      operationId: api_tickets_list
+      description: Returns the logged-in passenger’s tickets, newest first, with computed
+        status.
+      summary: Get my ticket history (Passenger)
+      tags:
+      - Tickets
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+          description: ''
+  /api/tickets/{id}/:
+    get:
+      operationId: api_tickets_retrieve
+      summary: Get a single ticket with computed status
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Tickets
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+          description: ''
+  /api/tickets/{id}/code/:
+    get:
+      operationId: api_tickets_code_retrieve
+      summary: Get a fresh 60-second rotating signed code for cashier scanning
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Tickets
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/tickets/validate/:
+    post:
+      operationId: api_tickets_validate_create
+      description: Verifies the rotating signed token, checks that the ticket belongs
+        to the cashier’s active trip, checks computed status, and logs a TicketScan
+        row.
+      summary: Validate a passenger ticket code (Cashier)
+      tags:
+      - Tickets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketValidateInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TicketValidateInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TicketValidateInput'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/trip-qr/scan/:
+    post:
+      operationId: api_trip_qr_scan_create
+      description: 'Validates the scanned QR token and returns the trip summary for
+        the passenger: public bus number, route name, direction, and current active
+        fare. Does NOT expose cashier identity or bus targa.'
+      summary: Scan a trip QR token (Passenger)
+      tags:
+      - Trips - QR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripQRScan'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripQRScan'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripQRScan'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/trips/:
+    get:
+      operationId: api_trips_list
+      description: Retrieve trip history filtered by bus, status, or date (YYYY-MM-DD).
+      summary: List trips (History & Active)
+      parameters:
+      - in: query
+        name: bus
+        schema:
+          type: string
+          format: uuid
+        description: Filter trips by PhysicalBus UUID
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+        description: 'Filter trips by start date (Format: YYYY-MM-DD)'
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - ended
+        description: Filter trips by status (active or ended)
+      tags:
+      - Trips
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trip'
+          description: ''
+    post:
+      operationId: api_trips_create
+      description: Starts a new trip for the chosen physical_bus (Cashier only). Automatically
+        copies the bus route, assigns the next trip number, defaults direction to
+        the opposite of the last trip, and creates a QR session.
+      summary: Start a new trip
+      tags:
+      - Trips
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Trip'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Trip'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Trip'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/trips/{id}/end/:
+    post:
+      operationId: api_trips_end_create
+      description: Ends the trip and revokes its active QR session. Only allowed by
+        the cashier who started it or an admin.
+      summary: End an active trip
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Trips
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/trips/{id}/payments/:
+    get:
+      operationId: api_trips_payments_retrieve
+      description: Returns all succeeded payments for a trip with masked passenger
+        names, plus the total amount collected computed via a database aggregate.
+      summary: Get succeeded payments and total collected for a trip (Cashier / Admin)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Payments
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/trips/{id}/qr/:
+    get:
+      operationId: api_trips_qr_retrieve
+      description: Returns the current active QR token and scannable QR image URL
+        for the trip.
+      summary: Get active QR session for a trip
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Trips - QR
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripQRSession'
+          description: ''
+  /api/trips/{id}/reverse/:
+    post:
+      operationId: api_trips_reverse_create
+      description: Ends the current active trip, revokes its QR token, and immediately
+        starts a new trip in the opposite direction with previous_trip linked and
+        a fresh QR token.
+      summary: Reverse an active trip (End + Start opposite direction)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Trips
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /api/trips/active/:
+    get:
+      operationId: api_trips_active_retrieve
+      description: Returns the cashier’s currently active trip (used when the mobile
+        app restarts).
+      summary: Get current active trip for logged-in cashier
+      tags:
+      - Trips
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+  /health/:
+    get:
+      operationId: health_retrieve
+      summary: Health check endpoint (verifies database connectivity)
+      tags:
+      - System
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+components:
+  schemas:
+    ActionEnum:
+      enum:
+      - trip.started
+      - trip.ended
+      - fare.changed
+      - bus.maintenance_started
+      - bus.maintenance_ended
+      - route.updated
+      - user.role_changed
+      - user.suspended
+      type: string
+      description: |-
+        * `trip.started` - Trip Started
+        * `trip.ended` - Trip Ended
+        * `fare.changed` - Fare Changed
+        * `bus.maintenance_started` - Bus Maintenance Started
+        * `bus.maintenance_ended` - Bus Maintenance Ended
+        * `route.updated` - Route Updated
+        * `user.role_changed` - User Role Changed
+        * `user.suspended` - User Suspended
+    ActorKindEnum:
+      enum:
+      - user
+      - system
+      - provider
+      type: string
+      description: |-
+        * `user` - User
+        * `system` - System
+        * `provider` - Provider
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        actor_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        actor_role:
+          type: string
+          readOnly: true
+        actor_kind:
+          allOf:
+          - $ref: '#/components/schemas/ActorKindEnum'
+          readOnly: true
+        action:
+          allOf:
+          - $ref: '#/components/schemas/ActionEnum'
+          readOnly: true
+        entity_type:
+          type: string
+          readOnly: true
+        entity_id:
+          type: string
+          readOnly: true
+        metadata:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - action
+      - actor_id
+      - actor_kind
+      - actor_role
+      - created_at
+      - entity_id
+      - entity_type
+      - id
+      - metadata
+    BusLiveState:
+      type: object
+      description: |-
+        Formats the live bus state for map readers (Passengers and Admins).
+        Adds two computed fields: age_seconds and is_stale.
+      properties:
+        bus:
+          type: string
+          format: uuid
+          readOnly: true
+        trip:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        latitude:
+          type: number
+          format: double
+          readOnly: true
+        longitude:
+          type: number
+          format: double
+          readOnly: true
+        speed:
+          type: number
+          format: double
+          readOnly: true
+        heading:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
+        recorded_at:
+          type: string
+          format: date-time
+          readOnly: true
+        received_at:
+          type: string
+          format: date-time
+          readOnly: true
+        distance_along_m:
+          type: number
+          format: double
+          readOnly: true
+        next_fermata:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        next_fermata_name:
+          type: string
+          readOnly: true
+        age_seconds:
+          type: number
+          format: double
+          readOnly: true
+        is_stale:
+          type: boolean
+          readOnly: true
+      required:
+      - age_seconds
+      - bus
+      - distance_along_m
+      - heading
+      - is_stale
+      - latitude
+      - longitude
+      - next_fermata
+      - next_fermata_name
+      - received_at
+      - recorded_at
+      - speed
+      - trip
+    BusTripReport:
+      type: object
+      description: 'Formats the ''Trip #501, 23 passengers, 575 ETB'' view with database-annotated
+        fields.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: integer
+          readOnly: true
+        physical_bus:
+          type: string
+          format: uuid
+          readOnly: true
+        bus_targa:
+          type: string
+          readOnly: true
+        route:
+          type: string
+          format: uuid
+          readOnly: true
+        route_name:
+          type: string
+          readOnly: true
+        public_bus_number:
+          type: integer
+          readOnly: true
+        direction:
+          allOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusD69Enum'
+          readOnly: true
+          default: active
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+        ended_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        passenger_count:
+          type: integer
+          readOnly: true
+        revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        summary_label:
+          type: string
+          readOnly: true
+      required:
+      - bus_targa
+      - direction
+      - ended_at
+      - id
+      - number
+      - passenger_count
+      - physical_bus
+      - public_bus_number
+      - revenue
+      - route
+      - route_name
+      - started_at
+      - status
+      - summary_label
+    DirectionEnum:
+      enum:
+      - outbound
+      - inbound
+      type: string
+      description: |-
+        * `outbound` - Outbound
+        * `inbound` - Inbound
+    Fare:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        route:
+          type: string
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        effective_from:
+          type: string
+          format: date-time
+        effective_to:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        configured_by:
+          type: string
+          format: uuid
+          readOnly: true
+      required:
+      - amount
+      - configured_by
+      - created_at
+      - effective_from
+      - effective_to
+      - id
+      - route
+      - updated_at
+    FareHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        route:
+          type: string
+          format: uuid
+          readOnly: true
+        route_name:
+          type: string
+          readOnly: true
+        public_bus_number:
+          type: integer
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        effective_from:
+          type: string
+          format: date-time
+          readOnly: true
+        effective_to:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_by_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - created_at
+      - created_by_id
+      - effective_from
+      - effective_to
+      - id
+      - public_bus_number
+      - route
+      - route_name
+    Fermata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - latitude
+      - longitude
+      - name
+      - updated_at
+    LocationPingInput:
+      type: object
+      description: |-
+        Validates incoming GPS pings from the cashier's phone (POST /buses/{id}/location).
+        Because this inherits from serializers.Serializer (not ModelSerializer),
+        we declare each field directly with its exact min/max validation rules instead of using class Meta.
+      properties:
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+        speed:
+          type: number
+          format: double
+          maximum: 50.0
+          minimum: 0.0
+          default: 0.0
+        heading:
+          type: number
+          format: double
+          maximum: 360.0
+          minimum: 0.0
+          nullable: true
+        accuracy:
+          type: number
+          format: double
+          minimum: 0.0
+          nullable: true
+        recorded_at:
+          type: string
+          format: date-time
+      required:
+      - latitude
+      - longitude
+      - recorded_at
+    MaintenanceEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        bus:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        started_by:
+          type: string
+          format: uuid
+          readOnly: true
+        ended_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - bus
+      - created_at
+      - ended_by
+      - id
+      - reason
+      - started_at
+      - started_by
+      - updated_at
+    MaintenanceStartInput:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+      required:
+      - reason
+    OutcomeEnum:
+      enum:
+      - succeeded
+      - failed
+      type: string
+      description: |-
+        * `succeeded` - succeeded
+        * `failed` - failed
+    PaginatedAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+    PaginatedBusTripReportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusTripReport'
+    PaginatedFareHistoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FareHistory'
+    PatchedFermata:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedMaintenanceEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        bus:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        started_by:
+          type: string
+          format: uuid
+          readOnly: true
+        ended_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedPhysicalBus:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        targa:
+          type: string
+          maxLength: 20
+        route:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/PhysicalBusStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedRoute:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        public_bus_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        name:
+          type: string
+          maxLength: 100
+        status:
+          $ref: '#/components/schemas/RouteStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteStop'
+          readOnly: true
+        directions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteDirection'
+          readOnly: true
+    PatchedRouteDirection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        route:
+          type: string
+          format: uuid
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+        geometry:
+          nullable: true
+        stop_distances: {}
+        distance_m:
+          type: number
+          format: double
+          nullable: true
+        duration_s:
+          type: number
+          format: double
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedRouteStop:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        route:
+          type: string
+          format: uuid
+        fermata:
+          type: string
+          format: uuid
+        sequence_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        fermata_detail:
+          allOf:
+          - $ref: '#/components/schemas/Fermata'
+          readOnly: true
+    Payment:
+      type: object
+      description: |-
+        Full payment status response for GET /payments/{id} (Passenger owner or Admin).
+        All fields are read-only because the backend and webhook control the lifecycle.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        trip:
+          type: string
+          format: uuid
+          readOnly: true
+        passenger:
+          type: string
+          format: uuid
+          readOnly: true
+        fare:
+          type: string
+          format: uuid
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PaymentStatusEnum'
+          readOnly: true
+          default: pending
+        provider:
+          type: string
+          readOnly: true
+          default: mock
+        provider_ref:
+          type: string
+          readOnly: true
+          nullable: true
+        idempotency_key:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        failure_reason:
+          type: string
+          readOnly: true
+          nullable: true
+        ticket_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+      required:
+      - amount
+      - created_at
+      - expires_at
+      - failure_reason
+      - fare
+      - id
+      - idempotency_key
+      - paid_at
+      - passenger
+      - provider
+      - provider_ref
+      - status
+      - ticket_id
+      - trip
+    PaymentInitiate:
+      type: object
+      description: |-
+        Validates input for POST /payments/initiate.
+        The passenger sends the scanned QR token.
+        Idempotency-Key is normally sent in the HTTP header, or optionally in the body for easy testing.
+      properties:
+        token:
+          type: string
+          maxLength: 128
+        idempotency_key:
+          type: string
+          maxLength: 128
+      required:
+      - token
+    PaymentStatusEnum:
+      enum:
+      - pending
+      - succeeded
+      - failed
+      - expired
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `succeeded` - Succeeded
+        * `failed` - Failed
+        * `expired` - Expired
+    PhysicalBus:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        targa:
+          type: string
+          maxLength: 20
+        route:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          $ref: '#/components/schemas/PhysicalBusStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - targa
+      - updated_at
+    PhysicalBusStatusEnum:
+      enum:
+      - active
+      - maintenance
+      - retired
+      type: string
+      description: |-
+        * `active` - Active
+        * `maintenance` - Maintenance
+        * `retired` - Retired
+    Register:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+        full_name:
+          type: string
+          maxLength: 255
+        phone:
+          type: string
+          maxLength: 20
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - full_name
+      - id
+      - password
+      - phone
+      - updated_at
+      - username
+    RoleEnum:
+      enum:
+      - passenger
+      - casher
+      - admin
+      type: string
+      description: |-
+        * `passenger` - Passenger
+        * `casher` - Casher
+        * `admin` - Admin
+    Route:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        public_bus_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        name:
+          type: string
+          maxLength: 100
+        status:
+          $ref: '#/components/schemas/RouteStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteStop'
+          readOnly: true
+        directions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteDirection'
+          readOnly: true
+      required:
+      - created_at
+      - directions
+      - id
+      - name
+      - public_bus_number
+      - stops
+      - updated_at
+    RouteDirection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        route:
+          type: string
+          format: uuid
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+        geometry:
+          nullable: true
+        stop_distances: {}
+        distance_m:
+          type: number
+          format: double
+          nullable: true
+        duration_s:
+          type: number
+          format: double
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - direction
+      - id
+      - route
+      - updated_at
+    RouteStatusEnum:
+      enum:
+      - active
+      - inactive
+      type: string
+      description: |-
+        * `active` - Active
+        * `inactive` - Inactive
+    RouteStop:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        route:
+          type: string
+          format: uuid
+        fermata:
+          type: string
+          format: uuid
+        sequence_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        fermata_detail:
+          allOf:
+          - $ref: '#/components/schemas/Fermata'
+          readOnly: true
+      required:
+      - created_at
+      - fermata
+      - fermata_detail
+      - id
+      - route
+      - sequence_number
+      - updated_at
+    SimulatePaymentInput:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+        outcome:
+          allOf:
+          - $ref: '#/components/schemas/OutcomeEnum'
+          default: succeeded
+      required:
+      - payment_id
+    StatusD69Enum:
+      enum:
+      - active
+      - ended
+      type: string
+      description: |-
+        * `active` - Active
+        * `ended` - ended
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        payment:
+          type: string
+          format: uuid
+          readOnly: true
+        passenger:
+          type: string
+          format: uuid
+          readOnly: true
+        trip:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        issued_at:
+          type: string
+          format: date-time
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        route_name:
+          type: string
+          readOnly: true
+        public_bus_number:
+          type: integer
+          readOnly: true
+      required:
+      - amount
+      - code
+      - expires_at
+      - id
+      - issued_at
+      - passenger
+      - payment
+      - public_bus_number
+      - route_name
+      - status
+      - trip
+    TicketValidateInput:
+      type: object
+      description: |-
+        Validates input for POST /tickets/validate.
+        The cashier sends the rotating signed token (or short ticket code).
+      properties:
+        token:
+          type: string
+          maxLength: 512
+      required:
+      - token
+    Trip:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        route:
+          type: string
+          format: uuid
+          readOnly: true
+        casher:
+          type: string
+          format: uuid
+          readOnly: true
+        physical_bus:
+          type: string
+          format: uuid
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+        previous_trip:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        ended_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        number:
+          type: integer
+          readOnly: true
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusD69Enum'
+          readOnly: true
+          default: active
+      required:
+      - casher
+      - created_at
+      - ended_at
+      - id
+      - number
+      - physical_bus
+      - previous_trip
+      - route
+      - started_at
+      - status
+      - updated_at
+    TripQRScan:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+      - token
+    TripQRSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        trip:
+          type: string
+          format: uuid
+          readOnly: true
+        token:
+          type: string
+          readOnly: true
+        qr_image_url:
+          type: string
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/TripQRSessionStatusEnum'
+          readOnly: true
+          default: active
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - expires_at
+      - id
+      - qr_image_url
+      - status
+      - token
+      - trip
+      - updated_at
+    TripQRSessionStatusEnum:
+      enum:
+      - active
+      - revoked
+      - expired
+      type: string
+      description: |-
+        * `active` - Active
+        * `revoked` - Revoked
+        * `expired` - Expired
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

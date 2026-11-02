@@ -1,0 +1,30 @@
+import { BrandConfig } from "../types";
+
+export const demoBrand: BrandConfig = {
+  id: "demo",
+  name: "Demo Transit Network",
+  shortName: "Demo Transit",
+  logoPath: "/brands/demo/logo.svg",
+  tokens: {
+    background: "#F8FAFC",
+    foreground: "#0F172A",
+    card: "#FFFFFF",
+    cardForeground: "#0F172A",
+    muted: "#F1F5F9",
+    mutedForeground: "#475569",
+    border: "#E2E8F0",
+    input: "#CBD5E1",
+    primary: "#1D4ED8",
+    primaryForeground: "#FFFFFF",
+    accent: "#0284C7",
+    accentForeground: "#FFFFFF",
+    success: "#16A34A",
+    successForeground: "#FFFFFF",
+    warning: "#B45309",
+    warningForeground: "#FFFFFF",
+    danger: "#DC2626",
+    dangerForeground: "#FFFFFF",
+    ring: "#1D4ED8",
+    radius: "0.5rem",
+  },
+};

@@ -1,0 +1,30 @@
+import { BrandConfig } from "../types";
+
+export const anbessaBrand: BrandConfig = {
+  id: "anbessa",
+  name: "Anbessa City Bus Service Enterprise",
+  shortName: "Anbessa Bus",
+  logoPath: "/brands/anbessa/logo.svg",
+  tokens: {
+    background: "#FFFBF5",
+    foreground: "#1F1A17",
+    card: "#FFFFFF",
+    cardForeground: "#1F1A17",
+    muted: "#F3ECE2",
+    mutedForeground: "#5C534A",
+    border: "#EADFD3",
+    input: "#DECFC0",
+    primary: "#C8461A",
+    primaryForeground: "#FFFFFF",
+    accent: "#F2B01E",
+    accentForeground: "#1F1A17",
+    success: "#2E7D32",
+    successForeground: "#FFFFFF",
+    warning: "#B45309",
+    warningForeground: "#FFFFFF",
+    danger: "#C62828",
+    dangerForeground: "#FFFFFF",
+    ring: "#C8461A",
+    radius: "0.5rem",
+  },
+};

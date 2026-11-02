@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <!-- Slot for official brand logo: Demo Transit -->
+  <rect width="160" height="40" rx="6" fill="currentColor" fill-opacity="0.08"/>
+  <text x="80" y="24" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="currentColor" letter-spacing="1">
+    DEMO TRANSIT
+  </text>
+</svg>
