@@ -3,12 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { getActiveBrand, brands } from "@/brands";
-import { BrandLogo } from "@/components/brand-logo";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { StatusPill } from "@/components/ui/status-pill";
+import { BrandLogo } from "@/shared/ui/brand-logo";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+import { StatusPill } from "@/shared/ui/status-pill";
 import {
   Table,
   TableHeader,
@@ -16,7 +16,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table";
+} from "@/shared/ui/table";
 import {
   Dialog,
   DialogTrigger,
@@ -26,10 +26,10 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/toast";
-import { Skeleton } from "@/components/ui/skeleton";
-import { formatTime, formatDate, formatDateTime, formatMoney } from "@/lib/format";
+} from "@/shared/ui/dialog";
+import { useToast } from "@/shared/ui/toast";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { formatTime, formatDate, formatDateTime, formatMoney } from "@/shared/lib/format";
 
 export default function DevThemePage() {
   const defaultBrand = getActiveBrand();

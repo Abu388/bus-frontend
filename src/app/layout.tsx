@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Noto_Sans_Ethiopic } from "next/font/google";
 import { getActiveBrand, generateBrandCss } from "@/brands";
 import { QueryProvider } from "@/providers/query-provider";
-import { ToastProvider } from "@/components/ui/toast";
+import { ToastProvider, ServerBanner } from "@/shared/ui";
 import "./globals.css";
 
 const inter = Inter({
@@ -51,6 +51,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
         <QueryProvider>
           <ToastProvider>
+            <ServerBanner />
             {children}
           </ToastProvider>
         </QueryProvider>
