@@ -1,7 +1,10 @@
 import dynamic from "next/dynamic";
 import type { BaseMapProps } from "./BaseMap";
+import type { BusMarkerProps, FermataMarkerProps } from "./markers";
+import type { RoutePolylineProps } from "./polylines";
+import type { CoordinatePickerProps } from "./coordinate-picker";
 
-// Dynamic import with ssr: false for client-side rendering
+// Dynamic imports with ssr: false for client-side rendering
 export const BaseMap = dynamic<BaseMapProps>(() => import("./BaseMap"), {
   ssr: false,
   loading: () => (
@@ -14,6 +17,26 @@ export const BaseMap = dynamic<BaseMapProps>(() => import("./BaseMap"), {
   ),
 });
 
-export * from "./markers";
-export * from "./polylines";
-export * from "./coordinate-picker";
+export const BusMarker = dynamic<BusMarkerProps>(
+  () => import("./markers").then((mod) => mod.BusMarker),
+  { ssr: false }
+);
+
+export const FermataMarker = dynamic<FermataMarkerProps>(
+  () => import("./markers").then((mod) => mod.FermataMarker),
+  { ssr: false }
+);
+
+export const RoutePolyline = dynamic<RoutePolylineProps>(
+  () => import("./polylines").then((mod) => mod.RoutePolyline),
+  { ssr: false }
+);
+
+export const CoordinatePicker = dynamic<CoordinatePickerProps>(
+  () => import("./coordinate-picker").then((mod) => mod.CoordinatePicker),
+  { ssr: false }
+);
+
+export type { BusMarkerState, BusMarkerProps, FermataMarkerProps } from "./markers";
+export type { RoutePolylineProps } from "./polylines";
+export type { CoordinatePickerProps } from "./coordinate-picker";

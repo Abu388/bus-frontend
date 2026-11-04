@@ -16,7 +16,7 @@ async function forwardRequest(
 ): Promise<Response> {
   const { path } = await context.params;
   const cookieStore = await cookies();
-  let accessToken = cookieStore.get("access_token")?.value;
+  const accessToken = cookieStore.get("access_token")?.value;
   const refreshToken = cookieStore.get("refresh_token")?.value;
 
   // Build target URL preserving trailing slash

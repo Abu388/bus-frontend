@@ -29,7 +29,7 @@ import { useLiveBuses } from "@/features/tracking";
 import { useBuses } from "@/features/buses";
 import { useAdminTrips } from "@/features/trips";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -442,5 +442,13 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading dashboard...</div>}>
+      <DashboardContent />
+    </React.Suspense>
   );
 }

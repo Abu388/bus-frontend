@@ -237,10 +237,10 @@ export default function RoutesPage() {
         title: "OSRM Route Geometry Updated",
         description: `Calculated ${Math.round(routeResult.distanceMeters / 1000)} km road path.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Routing Calculation Failed",
-        description: err.message,
+        description: err instanceof Error ? err.message : "Failed to calculate road route",
         variant: "destructive",
       });
     }

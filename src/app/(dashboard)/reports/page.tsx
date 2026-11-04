@@ -12,7 +12,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useReportsSummary } from "@/features/reports";
-import { useRoutes } from "@/features/routes";
 import { useBuses } from "@/features/buses";
 import {
   Card,
@@ -35,7 +34,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { NavIcon } from "@/shared/ui/icons";
 import { formatETB, formatDate } from "@/shared/lib/format";
 
-export default function ReportsPage() {
+function ReportsContent() {
   const [rangePreset, setRangePreset] = React.useState<"today" | "7d" | "30d">("7d");
 
   const dateParams = React.useMemo(() => {
@@ -51,20 +50,16 @@ export default function ReportsPage() {
   }, [rangePreset]);
 
   const { data: summary, isLoading } = useReportsSummary(dateParams);
-  const { data: routes } = useRoutes();
   const { data: buses } = useBuses();
 
   const totals = summary?.totals ?? { trips_count: 0, passengers_count: 0, revenue: "0" };
 
   // Chart data: Route passenger demand
-  const routeDemandData = React.useMemo(() => {
-    if (!summary?.by_route) return [];
-    return summary.by_route.map((r) => ({
-      name: `Line ${r.public_bus_number}`,
-      passengers: r.passengers,
-      revenue: parseFloat(r.revenue) || 0,
-    }));
-  }, [summary?.by_route]);
+  const routeDemandData = (summary?.by_route ?? []).map((r) => ({
+    name: `Line ${r.public_bus_number}`,
+    passengers: r.passengers,
+    revenue: parseFloat(r.revenue) || 0,
+  }));
 
   return (
     <div className="space-y-6">
@@ -195,8 +190,10 @@ export default function ReportsPage() {
                       color: "var(--foreground)",
                       fontSize: "12px",
                     }}
-                    formatter={(val: any, name: any) => [
-                      name === "passengers" ? `${val} riders` : formatETB(val),
+                    formatter={(val: unknown, name: unknown) => [
+                      name === "passengers"
+                        ? `${typeof val === "number" ? val.toLocaleString() : val} riders`
+                        : formatETB(typeof val === "number" || typeof val === "string" ? val : 0),
                       name === "passengers" ? "Passengers" : "Revenue",
                     ]}
                   />
@@ -244,5 +241,13 @@ export default function ReportsPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading reports...</div>}>
+      <ReportsContent />
+    </React.Suspense>
   );
 }

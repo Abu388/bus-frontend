@@ -6,9 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   CardContent,
   Button,
   Input,
@@ -21,7 +18,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/shared/ui";
-import { BusIcon, WrenchIcon, RefreshIcon, ArrowRightIcon } from "@/shared/ui/icons";
+import type { StatusType } from "@/shared/ui/status-pill";
+import { BusIcon, WrenchIcon, RefreshIcon } from "@/shared/ui/icons";
 import { formatETB, formatTime12h, formatDate } from "@/shared/lib/format";
 import {
   useBuses,
@@ -40,7 +38,7 @@ import {
 } from "@/features/buses";
 import { useRoutes } from "@/features/routes";
 
-export default function BusesPage() {
+function BusesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -290,7 +288,7 @@ export default function BusesPage() {
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <StatusPill status={bus.status as any} />
+                          <StatusPill status={bus.status as StatusType} />
                         </td>
                         <td className="py-3 px-4 text-muted-foreground">
                           <div>{formatTime12h(bus.updated_at)}</div>
@@ -363,7 +361,7 @@ export default function BusesPage() {
               <div>
                 <h2 className="text-lg font-bold font-mono text-foreground">{selectedBus.targa}</h2>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <StatusPill status={selectedBus.status as any} />
+                  <StatusPill status={selectedBus.status as StatusType} />
                   <span className="text-xs text-muted-foreground">
                     {selectedBus.route && routeMap.get(selectedBus.route)
                       ? `Line ${routeMap.get(selectedBus.route)!.number}`
@@ -617,5 +615,13 @@ export default function BusesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function BusesPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading fleet...</div>}>
+      <BusesContent />
+    </React.Suspense>
   );
 }

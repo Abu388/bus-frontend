@@ -38,7 +38,7 @@ import { formatETB, formatDate } from "@/shared/lib/format";
 type DatePreset = "today" | "7d" | "30d" | "all";
 type ActiveTab = "routes" | "days" | "buses";
 
-export default function PaymentsAndRevenuePage() {
+function PaymentsContent() {
   const [preset, setPreset] = React.useState<DatePreset>("7d");
   const [dateFrom, setDateFrom] = React.useState<string>(() => {
     const d = new Date();
@@ -58,7 +58,7 @@ export default function PaymentsAndRevenuePage() {
     };
   }, [preset, dateFrom, dateTo]);
 
-  const { data: summary, isLoading, isError, error } = useReportsSummary(queryParams);
+  const { data: summary, isLoading } = useReportsSummary(queryParams);
 
   const handlePresetChange = (newPreset: DatePreset) => {
     setPreset(newPreset);
@@ -90,15 +90,12 @@ export default function PaymentsAndRevenuePage() {
   const avgRevPerPassenger = totals.passengers_count > 0 ? totalRevNum / totals.passengers_count : 0;
 
   // Chart data formatted
-  const chartData = React.useMemo(() => {
-    if (!summary?.by_day) return [];
-    return summary.by_day.map((day) => ({
-      date: formatDate(day.date, { month: "short", day: "numeric" }),
-      rawDate: day.date,
-      revenue: parseFloat(day.revenue) || 0,
-      passengers: day.passengers,
-    }));
-  }, [summary?.by_day]);
+  const chartData = (summary?.by_day ?? []).map((day) => ({
+    date: formatDate(day.date, { month: "short", day: "numeric" }),
+    rawDate: day.date,
+    revenue: parseFloat(day.revenue) || 0,
+    passengers: day.passengers,
+  }));
 
   return (
     <div className="space-y-6">
@@ -326,7 +323,10 @@ export default function PaymentsAndRevenuePage() {
                       fontSize: "12px",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     }}
-                    formatter={(value: any) => [`${formatETB(value)}`, "Daily Revenue"]}
+                    formatter={(value: unknown) => [
+                      formatETB(typeof value === "number" || typeof value === "string" ? value : 0),
+                      "Daily Revenue",
+                    ]}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
                   <Area
@@ -509,5 +509,13 @@ export default function PaymentsAndRevenuePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentsAndRevenuePage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading revenue metrics...</div>}>
+      <PaymentsContent />
+    </React.Suspense>
   );
 }

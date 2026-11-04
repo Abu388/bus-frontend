@@ -16,6 +16,19 @@ import { useBuses } from "@/features/buses";
 import { useRoutes } from "@/features/routes";
 import { useFermatas } from "@/features/fermatas";
 
+function subscribeToClock(callback: () => void) {
+  const interval = setInterval(callback, 5000);
+  return () => clearInterval(interval);
+}
+
+function getClockSnapshot() {
+  return Date.now();
+}
+
+function getClockServerSnapshot() {
+  return 0;
+}
+
 export default function LiveFleetMapPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedBusId, setSelectedBusId] = React.useState<string | null>(null);
@@ -73,6 +86,12 @@ export default function LiveFleetMapPage() {
       return plateMatch || lineMatch || nameMatch;
     });
   }, [liveBusesQuery.data, searchQuery, busLookup, routeLookup]);
+
+  const currentTimestamp = React.useSyncExternalStore(
+    subscribeToClock,
+    getClockSnapshot,
+    getClockServerSnapshot
+  );
 
   // Selected route geometry
   const selectedRoute = React.useMemo(() => {
@@ -216,10 +235,9 @@ export default function LiveFleetMapPage() {
               let state: BusMarkerState = "active";
               if (info?.status === "maintenance") {
                 state = "maintenance";
-              } else {
+              } else if (currentTimestamp > 0) {
                 const recordedTime = new Date(bus.recorded_at).getTime();
-                const now = Date.now();
-                const ageSeconds = (now - recordedTime) / 1000;
+                const ageSeconds = (currentTimestamp - recordedTime) / 1000;
                 if (ageSeconds > 120) {
                   state = "stale";
                 }
