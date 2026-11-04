@@ -27,4 +27,7 @@ export interface BrandConfig {
   shortName: string;
   logoPath: string;
   tokens: BrandTokens;
+  mapCenter?: [number, number];
+  mapZoom?: number;
+  mapBounds?: [[number, number], [number, number]];
 }
