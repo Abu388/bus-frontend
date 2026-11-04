@@ -9,7 +9,7 @@ export type BusTripReport = components["schemas"]["BusTripReport"];
 export const CreateBusSchema = z.object({
   targa: z.string().trim().min(3, "Plate number (targa) is required"),
   route: z.string().uuid("Invalid route UUID").optional().nullable().or(z.literal("")),
-  status: z.enum(["active", "maintenance", "retired", "inactive"]).default("active"),
+  status: z.enum(["active", "maintenance", "retired", "inactive"]),
 });
 
 export type CreateBusFormData = z.infer<typeof CreateBusSchema>;
