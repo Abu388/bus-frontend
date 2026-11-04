@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Sans_Ethiopic } from "next/font/google";
-import { getActiveBrand, generateBrandCss } from "@/brands";
+import { getActiveBrand } from "@/brands";
 import { QueryProvider } from "@/providers/query-provider";
 import { ToastProvider, ServerBanner } from "@/shared/ui";
 import "./globals.css";
@@ -34,20 +34,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const brand = getActiveBrand();
-  const brandStyles = generateBrandCss();
 
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       data-brand={brand.id}
       className={`${inter.variable} ${notoSansEthiopic.variable}`}
       style={{
         fontFamily: "var(--font-inter), var(--font-ethiopic), system-ui, sans-serif",
       }}
     >
-      <head>
-        <style dangerouslySetInnerHTML={{ __html: brandStyles }} />
-      </head>
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
         <QueryProvider>
           <ToastProvider>
