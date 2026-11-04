@@ -1,4 +1,4 @@
-import { ComingSoonPage } from "@/components/coming-soon-page";
+import { ComingSoonPage } from "@/shared/ui/coming-soon-page";
 
 export default function FaresPage() {
   return (

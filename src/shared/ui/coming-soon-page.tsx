@@ -14,6 +14,7 @@ interface ComingSoonPageProps {
   badge?: string;
   plannedFeatures?: string[];
   backendEndpoints?: string[];
+  endpointHint?: string;
 }
 
 export function ComingSoonPage({
@@ -23,6 +24,7 @@ export function ComingSoonPage({
   badge = "Feature In Progress",
   plannedFeatures = [],
   backendEndpoints = [],
+  endpointHint,
 }: ComingSoonPageProps) {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">

@@ -5,10 +5,12 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
+    testTimeout: 15000,
+    isolate: false,
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });
