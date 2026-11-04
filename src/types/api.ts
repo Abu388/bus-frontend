@@ -113,6 +113,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/login/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login with email, phone, or username (returns JWT access, refresh, and user profile) */
+        post: operations["api_auth_login_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get currently authenticated user profile */
+        get: operations["api_auth_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/refresh/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Takes a refresh type JSON web token and returns an access type JSON web
+         *     token if the refresh token is valid.
+         */
+        post: operations["api_auth_refresh_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/buses/": {
         parameters: {
             query?: never;
@@ -197,7 +251,7 @@ export interface paths {
         get: operations["api_buses_location_retrieve"];
         put?: never;
         /**
-         * Send GPS ping from Cashier phone
+         * Send GPS ping from Casher phone
          * @description Records GPS ping in history and updates live bus state if newer than existing state.
          */
         post: operations["api_buses_location_create"];
@@ -218,7 +272,7 @@ export interface paths {
         get: operations["api_buses_maintenance_list"];
         put?: never;
         /**
-         * Send a bus into maintenance (Cashier / Admin)
+         * Send a bus into maintenance (Casher / Admin)
          * @description Requires a reason. Rejected if the bus has an active trip or an open maintenance event. Sets bus status to maintenance, creates MaintenanceEvent, and writes an AuditLog row.
          */
         post: operations["api_buses_maintenance_create"];
@@ -647,7 +701,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a fresh 60-second rotating signed code for cashier scanning */
+        /** Get a fresh 60-second rotating signed code for casher scanning */
         get: operations["api_tickets_code_retrieve"];
         put?: never;
         post?: never;
@@ -667,8 +721,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Validate a passenger ticket code (Cashier)
-         * @description Verifies the rotating signed token, checks that the ticket belongs to the cashier’s active trip, checks computed status, and logs a TicketScan row.
+         * Validate a passenger ticket code (Casher)
+         * @description Verifies the rotating signed token, checks that the ticket belongs to the casher’s active trip, checks computed status, and logs a TicketScan row.
          */
         post: operations["api_tickets_validate_create"];
         delete?: never;
@@ -688,7 +742,7 @@ export interface paths {
         put?: never;
         /**
          * Scan a trip QR token (Passenger)
-         * @description Validates the scanned QR token and returns the trip summary for the passenger: public bus number, route name, direction, and current active fare. Does NOT expose cashier identity or bus targa.
+         * @description Validates the scanned QR token and returns the trip summary for the passenger: public bus number, route name, direction, and current active fare. Does NOT expose casher identity or bus targa.
          */
         post: operations["api_trip_qr_scan_create"];
         delete?: never;
@@ -712,7 +766,7 @@ export interface paths {
         put?: never;
         /**
          * Start a new trip
-         * @description Starts a new trip for the chosen physical_bus (Cashier only). Automatically copies the bus route, assigns the next trip number, defaults direction to the opposite of the last trip, and creates a QR session.
+         * @description Starts a new trip for the chosen physical_bus (Casher only). Automatically copies the bus route, assigns the next trip number, defaults direction to the opposite of the last trip, and creates a QR session.
          */
         post: operations["api_trips_create"];
         delete?: never;
@@ -732,7 +786,7 @@ export interface paths {
         put?: never;
         /**
          * End an active trip
-         * @description Ends the trip and revokes its active QR session. Only allowed by the cashier who started it or an admin.
+         * @description Ends the trip and revokes its active QR session. Only allowed by the casher who started it or an admin.
          */
         post: operations["api_trips_end_create"];
         delete?: never;
@@ -749,7 +803,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get succeeded payments and total collected for a trip (Cashier / Admin)
+         * Get succeeded payments and total collected for a trip (Casher / Admin)
          * @description Returns all succeeded payments for a trip with masked passenger names, plus the total amount collected computed via a database aggregate.
          */
         get: operations["api_trips_payments_retrieve"];
@@ -809,8 +863,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get current active trip for logged-in cashier
-         * @description Returns the cashier’s currently active trip (used when the mobile app restarts).
+         * Get current active trip for logged-in casher
+         * @description Returns the casher’s currently active trip (used when the mobile app restarts).
          */
         get: operations["api_trips_active_retrieve"];
         put?: never;
@@ -967,7 +1021,7 @@ export interface components {
             /** Format: date-time */
             readonly effective_to: string | null;
             /** Format: uuid */
-            readonly created_by_id: string | null;
+            readonly configured_by_id: string | null;
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -985,7 +1039,7 @@ export interface components {
             readonly updated_at: string;
         };
         /**
-         * @description Validates incoming GPS pings from the cashier's phone (POST /buses/{id}/location).
+         * @description Validates incoming GPS pings from the casher's phone (POST /buses/{id}/location).
          *     Because this inherits from serializers.Serializer (not ModelSerializer),
          *     we declare each field directly with its exact min/max validation rules instead of using class Meta.
          */
@@ -1005,6 +1059,19 @@ export interface components {
             accuracy?: number | null;
             /** Format: date-time */
             recorded_at: string;
+        };
+        LoginInput: {
+            /** @description Email, phone number, or username */
+            identifier?: string;
+            username?: string;
+            email?: string;
+            phone?: string;
+            password: string;
+        };
+        LoginResponse: {
+            access: string;
+            refresh: string;
+            user: components["schemas"]["UserProfile"];
         };
         MaintenanceEvent: {
             /** Format: uuid */
@@ -1343,10 +1410,14 @@ export interface components {
         };
         /**
          * @description Validates input for POST /tickets/validate.
-         *     The cashier sends the rotating signed token (or short ticket code).
+         *     The casher sends the rotating signed token (or short ticket code).
          */
         TicketValidateInput: {
             token: string;
+        };
+        TokenRefresh: {
+            readonly access: string;
+            refresh: string;
         };
         Trip: {
             /** Format: uuid */
@@ -1398,6 +1469,17 @@ export interface components {
          * @enum {string}
          */
         TripQRSessionStatusEnum: "active" | "revoked" | "expired";
+        UserProfile: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @description Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
+            readonly username: string;
+            /** Format: email */
+            readonly email: string;
+            readonly phone: string;
+            readonly full_name: string;
+            readonly role: components["schemas"]["RoleEnum"];
+        };
     };
     responses: never;
     parameters: never;
@@ -1585,6 +1667,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedBusTripReportList"];
+                };
+            };
+        };
+    };
+    api_auth_login_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginInput"];
+                "application/x-www-form-urlencoded": components["schemas"]["LoginInput"];
+                "multipart/form-data": components["schemas"]["LoginInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+        };
+    };
+    api_auth_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+        };
+    };
+    api_auth_refresh_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRefresh"];
+                "application/x-www-form-urlencoded": components["schemas"]["TokenRefresh"];
+                "multipart/form-data": components["schemas"]["TokenRefresh"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenRefresh"];
                 };
             };
         };
