@@ -155,6 +155,30 @@ export function LogoutIcon(props: IconProps) {
   );
 }
 
+export function WrenchIcon(props: IconProps) {
+  return <MaintenanceIcon {...props} />;
+}
+
+export function UsersIcon(props: IconProps) {
+  return <UserIcon {...props} />;
+}
+
+export function RefreshIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+    </svg>
+  );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+  );
+}
+
 export function NavIcon({ name, className }: { name: string; className?: string }) {
   const iconMap: Record<string, React.ComponentType<IconProps>> = {
     "layout-dashboard": DashboardIcon,

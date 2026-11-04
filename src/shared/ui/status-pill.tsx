@@ -1,7 +1,16 @@
 import * as React from "react";
 import { cn } from "@/shared/lib/utils";
 
-export type StatusType = "valid" | "active" | "expired" | "maintenance" | "warning";
+export type StatusType =
+  | "valid"
+  | "active"
+  | "expired"
+  | "maintenance"
+  | "warning"
+  | "ended"
+  | "completed"
+  | "retired"
+  | "inactive";
 
 export interface StatusPillProps extends React.HTMLAttributes<HTMLSpanElement> {
   status: StatusType;
@@ -18,8 +27,6 @@ export function StatusPill({
   className,
   ...props
 }: StatusPillProps) {
-  // Mapping as specified:
-  // valid = success, active = success, expired = danger, maintenance = danger
   const config: Record<
     StatusType,
     { defaultLabel: string; solid: string; subtle: string; dot: string }
@@ -43,10 +50,10 @@ export function StatusPill({
       dot: "bg-danger",
     },
     maintenance: {
-      defaultLabel: "Maintenance",
-      solid: "bg-danger text-danger-foreground",
-      subtle: "border border-danger text-danger bg-card",
-      dot: "bg-danger",
+      defaultLabel: "In Maintenance",
+      solid: "bg-warning text-warning-foreground",
+      subtle: "border border-warning text-warning bg-card",
+      dot: "bg-warning",
     },
     warning: {
       defaultLabel: "Warning",
@@ -54,15 +61,39 @@ export function StatusPill({
       subtle: "border border-warning text-warning bg-card",
       dot: "bg-warning",
     },
+    ended: {
+      defaultLabel: "Ended",
+      solid: "bg-muted text-muted-foreground",
+      subtle: "border border-border text-muted-foreground bg-muted/40",
+      dot: "bg-muted-foreground",
+    },
+    completed: {
+      defaultLabel: "Completed",
+      solid: "bg-muted text-muted-foreground",
+      subtle: "border border-border text-muted-foreground bg-muted/40",
+      dot: "bg-muted-foreground",
+    },
+    retired: {
+      defaultLabel: "Retired",
+      solid: "bg-danger text-danger-foreground",
+      subtle: "border border-border text-muted-foreground bg-muted/40 line-through",
+      dot: "bg-danger",
+    },
+    inactive: {
+      defaultLabel: "Inactive",
+      solid: "bg-muted text-muted-foreground",
+      subtle: "border border-border text-muted-foreground bg-muted/40",
+      dot: "bg-muted-foreground",
+    },
   };
 
-  const current = config[status] || config.active;
-  const displayLabel = label || current.defaultLabel;
+  const current = config[status] ?? config.active;
+  const displayLabel = label ?? current.defaultLabel;
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold select-none",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide transition-colors",
         variant === "solid" ? current.solid : current.subtle,
         className
       )}
@@ -70,10 +101,7 @@ export function StatusPill({
     >
       {showDot && (
         <span
-          className={cn(
-            "h-1.5 w-1.5 rounded-full",
-            variant === "solid" ? "bg-current" : current.dot
-          )}
+          className={cn("h-1.5 w-1.5 rounded-full shrink-0", current.dot)}
           aria-hidden="true"
         />
       )}
