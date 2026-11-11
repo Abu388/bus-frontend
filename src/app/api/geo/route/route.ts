@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
           durationSeconds: Math.round(route.duration),
         };
 
-        geoRouteCache.set(cacheKey, result, 30 * 60 * 1000); // 30 min cache
+        geoRouteCache.set(cacheKey, result, 10 * 60 * 1000); // 10 min cache
         return NextResponse.json(result);
       }
     }

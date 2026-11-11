@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { authApi } from "./api";
@@ -6,7 +7,18 @@ import type { LoginFormData, AuthUser } from "./schemas";
 import { useToast } from "@/shared/ui/toast";
 import { AppError } from "@/shared/api/errors";
 
+const subscribeToNothing = () => () => {};
+
+function useIsClient() {
+  return React.useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false
+  );
+}
+
 export function useAuth() {
+  const isClient = useIsClient();
   const query = useQuery({
     queryKey: authKeys.me(),
     queryFn: async () => {
@@ -15,6 +27,7 @@ export function useAuth() {
     },
     retry: false,
     staleTime: 5 * 60 * 1000,
+    enabled: isClient,
   });
 
   return {

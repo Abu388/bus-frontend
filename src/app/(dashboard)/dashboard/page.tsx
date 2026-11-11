@@ -10,7 +10,7 @@ import {
   CardDescription,
   CardContent,
   Button,
-  Badge,
+  PassengerBadge,
   StatusPill,
   Skeleton,
 } from "@/shared/ui";
@@ -193,7 +193,7 @@ function DashboardContent() {
       {/* 5 KPI Metric Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {/* Total Revenue */}
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card before:hidden border-t-[3px] border-t-primary">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Total Revenue
@@ -206,7 +206,7 @@ function DashboardContent() {
             {summaryQuery.isLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+              <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground">
                 {formatETB(totals?.revenue ?? "0.00")}
               </div>
             )}
@@ -215,12 +215,12 @@ function DashboardContent() {
         </Card>
 
         {/* Total Passengers */}
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card before:hidden border-t-[3px] border-t-accent-strong">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Passengers
             </CardTitle>
-            <div className="rounded-md bg-accent/10 p-1.5 text-accent">
+            <div className="rounded-md bg-accent-soft p-1.5 text-accent-foreground">
               <UsersIcon className="h-4 w-4" />
             </div>
           </CardHeader>
@@ -228,7 +228,7 @@ function DashboardContent() {
             {summaryQuery.isLoading ? (
               <Skeleton className="h-8 w-20" />
             ) : (
-              <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+              <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground">
                 {(totals?.passengers_count ?? 0).toLocaleString()}
               </div>
             )}
@@ -237,7 +237,7 @@ function DashboardContent() {
         </Card>
 
         {/* Total Trips */}
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card before:hidden border-t-[3px] border-t-primary">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Trips Run
@@ -250,7 +250,7 @@ function DashboardContent() {
             {summaryQuery.isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-xl sm:text-2xl font-bold font-mono text-foreground">
+              <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground">
                 {(totals?.trips_count ?? 0).toLocaleString()}
               </div>
             )}
@@ -259,7 +259,7 @@ function DashboardContent() {
         </Card>
 
         {/* Live Active Buses */}
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card before:hidden border-t-[3px] border-t-accent-strong">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Live Buses
@@ -273,7 +273,7 @@ function DashboardContent() {
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl font-bold font-mono text-foreground">{liveCount}</span>
+                <span className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-foreground">{liveCount}</span>
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
@@ -289,7 +289,7 @@ function DashboardContent() {
         </Card>
 
         {/* In Maintenance */}
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card before:hidden border-t-[3px] border-t-primary">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               In Maintenance
@@ -302,7 +302,7 @@ function DashboardContent() {
             {maintenanceBusesQuery.isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-xl sm:text-2xl font-bold font-mono text-warning">
+              <div className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-warning">
                 {maintenanceCount}
               </div>
             )}
@@ -335,7 +335,7 @@ function DashboardContent() {
         <Link href="/routes" className="group">
           <Card className="border-border bg-card hover:border-primary/50 transition-all p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-accent/10 p-2.5 text-accent group-hover:scale-105 transition-transform">
+              <div className="rounded-lg bg-accent-soft p-2.5 text-accent-foreground group-hover:scale-105 transition-transform">
                 <TripIcon className="h-5 w-5" />
               </div>
               <div>
@@ -408,13 +408,18 @@ function DashboardContent() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {recentTripsQuery.data?.items.map((trip) => (
-                    <tr key={trip.id} className="hover:bg-muted/20 transition-colors">
+                    <tr key={trip.id} className="hover:bg-accent-soft/40 transition-colors">
                       <td className="py-2.5 px-3">
                         <div className="font-semibold text-foreground">#{trip.number}</div>
-                        <div className="font-mono text-[11px] text-muted-foreground">{trip.bus_targa}</div>
+                        <div className="mt-0.5">
+                          <span className="plate-badge">{trip.bus_targa}</span>
+                        </div>
                       </td>
                       <td className="py-2.5 px-3">
-                        <div className="font-medium text-foreground">Line {trip.public_bus_number}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="bus-number-badge">{trip.public_bus_number}</span>
+                          <span className="text-[11px] text-muted-foreground">line</span>
+                        </div>
                         <div className="text-[11px] text-muted-foreground truncate max-w-[150px]">{trip.route_name}</div>
                       </td>
                       <td className="py-2.5 px-3 capitalize text-muted-foreground">
@@ -427,10 +432,10 @@ function DashboardContent() {
                       <td className="py-2.5 px-3">
                         <StatusPill status={trip.status === "active" ? "active" : "ended"} />
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-medium">
-                        {trip.passenger_count}
+                      <td className="py-2.5 px-3 text-right">
+                        <PassengerBadge count={trip.passenger_count ?? 0} size="sm" />
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-semibold text-foreground">
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-foreground">
                         {formatETB(trip.revenue)}
                       </td>
                     </tr>

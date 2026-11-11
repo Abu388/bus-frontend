@@ -52,7 +52,7 @@ export function StatusPill({
     maintenance: {
       defaultLabel: "In Maintenance",
       solid: "bg-warning text-warning-foreground",
-      subtle: "border border-warning text-warning bg-card",
+      subtle: "border border-warning text-foreground bg-accent-soft/60",
       dot: "bg-warning",
     },
     warning: {
@@ -93,7 +93,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide transition-colors",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide transition-colors",
         variant === "solid" ? current.solid : current.subtle,
         className
       )}

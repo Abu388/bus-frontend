@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useAuditLogs, type AuditLog } from "@/features/audit";
+import {
+  useAuditLogs,
+  getAuditActionBadgeProps,
+  isPaymentOrTicketAction,
+  type AuditLog,
+  type AuditLogMetadata,
+} from "@/features/audit";
 import {
   Card,
   CardHeader,
@@ -20,13 +26,19 @@ import {
 } from "@/shared/ui/table";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { PassengerBadge } from "@/shared/ui/passenger-badge";
 import { Input } from "@/shared/ui/input";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { NavIcon } from "@/shared/ui/icons";
-import { formatDate, formatTime12h } from "@/shared/lib/format";
+import { formatDate, formatTime12h, formatETB, formatPassengerCount } from "@/shared/lib/format";
 
 const ACTION_OPTIONS = [
   { value: "", label: "All Actions" },
+  { value: "payment.initiated", label: "Payment Initiated" },
+  { value: "payment.succeeded", label: "Payment Succeeded" },
+  { value: "payment.failed", label: "Payment Failed" },
+  { value: "ticket.issued", label: "Ticket Issued" },
+  { value: "ticket.validated", label: "Ticket Validated" },
   { value: "fare.changed", label: "Fare Changed" },
   { value: "bus.maintenance_started", label: "Maintenance Started" },
   { value: "bus.maintenance_ended", label: "Maintenance Ended" },
@@ -39,6 +51,8 @@ const ACTION_OPTIONS = [
 
 const ENTITY_TYPE_OPTIONS = [
   { value: "", label: "All Entities" },
+  { value: "payment", label: "Payment" },
+  { value: "ticket", label: "Ticket" },
   { value: "fare", label: "Fare" },
   { value: "bus", label: "Bus" },
   { value: "trip", label: "Trip" },
@@ -133,13 +147,6 @@ function AuditContent() {
   const hasActiveFilters = Boolean(
     actorParam || actionParam || entityTypeParam || dateFromParam || dateToParam
   );
-
-  const getActionBadgeVariant = (action: string) => {
-    if (action.includes("maintenance")) return "outline";
-    if (action.includes("fare")) return "accent";
-    if (action.includes("trip")) return "default";
-    return "outline";
-  };
 
   return (
     <div className="space-y-6">
@@ -349,12 +356,18 @@ function AuditContent() {
                 <TableBody>
                   {logs.map((log: AuditLog) => {
                     const isExpanded = expandedRows.has(log.id);
+                    const meta = (log.metadata && typeof log.metadata === "object" ? log.metadata : null) as AuditLogMetadata | null;
+                    const isPaymentOrTicket = isPaymentOrTicketAction(log.action);
+                    const actionBadge = getAuditActionBadgeProps(log.action);
+                    const passengerCount = meta?.passenger_count ?? meta?.quantity ?? (isPaymentOrTicket ? 1 : undefined);
+                    const hasPassengers = meta && (meta.passenger_count !== undefined || meta.quantity !== undefined);
+                    const hasAmount = meta && meta.amount !== undefined && meta.amount !== null;
 
                     return (
                       <React.Fragment key={log.id}>
                         <TableRow
                           onClick={() => toggleRow(log.id)}
-                          className="cursor-pointer hover:bg-muted/40 transition-colors"
+                          className="cursor-pointer hover:bg-accent-soft/40 transition-colors"
                         >
                           <TableCell className="w-10 text-center text-muted-foreground font-mono text-xs">
                             {isExpanded ? "▼" : "▶"}
@@ -364,12 +377,30 @@ function AuditContent() {
                             <div className="text-[10px] text-muted-foreground">{formatDate(log.created_at)}</div>
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant={getActionBadgeVariant(log.action)}
-                              className="text-[11px] font-mono capitalize"
-                            >
-                              {log.action}
-                            </Badge>
+                            <div className="flex flex-col gap-1 items-start">
+                              <Badge
+                                variant={actionBadge.variant}
+                                className={`text-[11px] font-medium whitespace-nowrap ${actionBadge.className ?? ""}`}
+                              >
+                                {actionBadge.label}
+                              </Badge>
+                              {(hasPassengers || (isPaymentOrTicket && (passengerCount !== undefined || hasAmount))) && (
+                                <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                  {passengerCount !== undefined && (
+                                    <PassengerBadge
+                                      count={passengerCount}
+                                      unitFare={meta?.unit_fare}
+                                      size="sm"
+                                    />
+                                  )}
+                                  {hasAmount && (
+                                    <span className="text-[11px] font-semibold text-foreground">
+                                      {formatETB(meta?.amount as string | number)}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-xs font-semibold capitalize text-foreground">
                             {log.entity_type}
@@ -391,7 +422,7 @@ function AuditContent() {
                         {isExpanded && (
                           <TableRow className="bg-muted/20 border-b border-border">
                             <TableCell colSpan={7} className="p-4">
-                              <div className="space-y-2">
+                              <div className="space-y-3">
                                 <div className="flex items-center justify-between text-xs">
                                   <span className="font-semibold text-foreground uppercase tracking-wider text-[11px]">
                                     Event Payload & Structured Metadata
@@ -400,10 +431,110 @@ function AuditContent() {
                                     Log ID: {log.id}
                                   </span>
                                 </div>
+
+                                {/* Structured Event Summary Card for Payment and Ticket Events */}
+                                {isPaymentOrTicket && meta && (
+                                  <div className="rounded-lg border border-border bg-card p-3.5 space-y-3 shadow-xs">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-border/60">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-semibold text-foreground">
+                                          Transaction Summary
+                                        </span>
+                                        <Badge
+                                          variant={actionBadge.variant}
+                                          className={`text-[10px] ${actionBadge.className ?? ""}`}
+                                        >
+                                          {actionBadge.label}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {hasAmount && (
+                                          <span className="text-sm font-bold text-foreground font-mono">
+                                            {formatETB(meta.amount as string | number)}
+                                          </span>
+                                        )}
+                                        <PassengerBadge
+                                          count={passengerCount}
+                                          unitFare={meta.unit_fare}
+                                          size="md"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Grid details */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                                      <div className="rounded-md border border-border/70 bg-background p-2.5">
+                                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                                          Passenger Count
+                                        </span>
+                                        <div className="mt-1 flex items-center gap-1.5">
+                                          <span className="font-semibold text-foreground text-xs font-mono">
+                                            {formatPassengerCount(passengerCount)}
+                                          </span>
+                                          {(meta.passenger_count ?? meta.quantity ?? 1) > 1 && (
+                                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-accent-soft text-accent-foreground font-semibold">
+                                              Group
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      <div className="rounded-md border border-border/70 bg-background p-2.5">
+                                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                                          Unit Fare
+                                        </span>
+                                        <span className="mt-1 font-semibold text-foreground text-xs font-mono block">
+                                          {meta.unit_fare !== undefined && meta.unit_fare !== null
+                                            ? formatETB(meta.unit_fare as string | number)
+                                            : "—"}
+                                        </span>
+                                      </div>
+
+                                      <div className="rounded-md border border-border/70 bg-background p-2.5">
+                                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                                          Total Amount
+                                        </span>
+                                        <span className="mt-1 font-bold text-foreground text-xs font-mono block">
+                                          {hasAmount ? formatETB(meta.amount as string | number) : "—"}
+                                        </span>
+                                      </div>
+
+                                      <div className="rounded-md border border-border/70 bg-background p-2.5">
+                                        <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
+                                          Reference ID
+                                        </span>
+                                        <span className="mt-1 font-mono text-xs text-foreground truncate block">
+                                          {meta.ticket_id || meta.payment_id || meta.code || log.entity_id || "—"}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Breakdown row when passenger_count > 1 */}
+                                    {(meta.passenger_count ?? meta.quantity ?? 1) > 1 && meta.unit_fare && meta.amount && (
+                                      <div className="rounded border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs text-foreground flex items-center justify-between">
+                                        <span className="text-muted-foreground">Family / Group Calculation:</span>
+                                        <span className="font-mono font-medium">
+                                          {formatPassengerCount(passengerCount)} × {formatETB(meta.unit_fare as string | number)} = {formatETB(meta.amount as string | number)}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Raw JSON view */}
                                 <div className="rounded-lg border border-border bg-background p-3">
-                                  {log.metadata && typeof log.metadata === "object" ? (
+                                  {meta ? (
                                     <pre className="text-xs font-mono text-foreground overflow-x-auto max-h-72 whitespace-pre-wrap">
-                                      {JSON.stringify(log.metadata, null, 2)}
+                                      {JSON.stringify(
+                                        isPaymentOrTicket
+                                          ? {
+                                              ...meta,
+                                              passenger_count_formatted: formatPassengerCount(passengerCount),
+                                            }
+                                          : meta,
+                                        null,
+                                        2
+                                      )}
                                     </pre>
                                   ) : (
                                     <p className="text-xs text-muted-foreground italic">

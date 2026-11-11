@@ -122,3 +122,30 @@ export function formatRelativeAge(timestamp: Date | string | number | null | und
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays}d ago`;
 }
+
+/**
+ * Parse passenger count safely defaulting to 1 when undefined, null, or invalid.
+ */
+export function parsePassengerCount(count: number | string | null | undefined): number {
+  if (count === null || count === undefined || count === "") return 1;
+  const num = typeof count === "string" ? parseInt(count, 10) : count;
+  if (typeof num !== "number" || isNaN(num) || num <= 0) return 1;
+  return Math.floor(num);
+}
+
+/**
+ * Format passenger count cleanly.
+ * Examples:
+ *   1 -> "1 passenger" (or "1 Passenger" with capitalize: true)
+ *   6 -> "6 passengers" (or "6 Passengers" with capitalize: true)
+ */
+export function formatPassengerCount(
+  count: number | string | null | undefined,
+  options?: { capitalize?: boolean }
+): string {
+  const n = parsePassengerCount(count);
+  const isCap = options?.capitalize;
+  const noun = n === 1 ? (isCap ? "Passenger" : "passenger") : (isCap ? "Passengers" : "passengers");
+  return `${n} ${noun}`;
+}
+

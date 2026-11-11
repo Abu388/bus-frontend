@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { stopsApi } from "./api";
 import { stopKeys } from "./keys";
 import { routeKeys } from "@/features/routes/keys";
+import { fermataKeys } from "@/features/fermatas/keys";
+import { directionKeys } from "@/features/directions/keys";
 import type { RouteStop, CreateRouteStopFormData, UpdateRouteStopFormData } from "./schemas";
 import { useToast } from "@/shared/ui/toast";
 import { AppError } from "@/shared/api/errors";
@@ -66,27 +68,18 @@ export function useUpdateStop() {
 
 export function useDeleteStop() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation<void, AppError, { id: string; routeId?: string }>({
     mutationFn: ({ id }) => stopsApi.deleteStop(id),
     onSuccess: (_, { routeId }) => {
-      queryClient.invalidateQueries({ queryKey: stopKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: stopKeys.all });
+      queryClient.invalidateQueries({ queryKey: routeKeys.all });
+      queryClient.invalidateQueries({ queryKey: fermataKeys.all });
+      queryClient.invalidateQueries({ queryKey: directionKeys.all });
       if (routeId) {
         queryClient.invalidateQueries({ queryKey: routeKeys.detail(routeId) });
       }
-      queryClient.invalidateQueries({ queryKey: routeKeys.lists() });
-      toast({
-        title: "Stop Removed",
-        description: "The stop was removed from the route.",
-      });
     },
-    onError: (error) => {
-      toast({
-        title: "Failed to remove stop",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+    // Errors are surfaced inline inside the delete confirmation dialog.
   });
 }

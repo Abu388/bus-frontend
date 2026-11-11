@@ -7,7 +7,18 @@ import { geoSearchCache, checkRateLimit } from "@/shared/lib/geo-cache";
 
 const SearchQuerySchema = z.object({
   q: z.string().trim().min(2, "Search query must be at least 2 characters").max(100),
-  limit: z.coerce.number().int().min(1).max(20).default(6),
+  limit: z.coerce.number().int().min(1).max(20).default(8),
+  // minLon,minLat,maxLon,maxLat — used for the bounded "OSM bus stops in view" search.
+  viewbox: z
+    .string()
+    .trim()
+    .max(120)
+    .regex(
+      /^-?\d{1,3}(\.\d+)?(,-?\d{1,3}(\.\d+)?){3}$/,
+      "viewbox must be minLon,minLat,maxLon,maxLat"
+    )
+    .optional(),
+  bounded: z.enum(["0", "1"]).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -33,7 +44,9 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const parsed = SearchQuerySchema.safeParse({
     q: searchParams.get("q"),
-    limit: searchParams.get("limit") ?? 6,
+    limit: searchParams.get("limit") ?? 8,
+    viewbox: searchParams.get("viewbox") ?? undefined,
+    bounded: searchParams.get("bounded") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -43,8 +56,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { q, limit } = parsed.data;
-  const cacheKey = `search:${q.toLowerCase()}:${limit}`;
+  const { q, limit, viewbox, bounded } = parsed.data;
+  const cacheKey = `search:${q.toLowerCase()}:${limit}:${viewbox ?? ""}:${bounded ?? ""}`;
   const cached = geoSearchCache.get(cacheKey);
   if (cached) {
     return NextResponse.json(cached);
@@ -52,14 +65,20 @@ export async function GET(request: NextRequest) {
 
   // 4. Request from backend Nominatim (scoped to Ethiopia via countrycodes=et)
   try {
-    const url = `${GEOCODE_URL}/search?q=${encodeURIComponent(q)}&format=json&limit=${limit}&countrycodes=et`;
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "AnbessaBusStaffPortal/1.0",
-      },
+    const params = new URLSearchParams({
+      q,
+      format: "jsonv2",
+      limit: String(limit),
+      countrycodes: "et",
+      addressdetails: "1",
+      "accept-language": "en",
     });
+    if (viewbox) {
+      params.set("viewbox", viewbox);
+      params.set("bounded", bounded ?? "1");
+    }
 
+    const res = await fetchGeocodeSearch(params);
     if (!res.ok) {
       return NextResponse.json(
         { message: "Geocoding service unavailable" },
@@ -74,6 +93,10 @@ export async function GET(request: NextRequest) {
           displayName: String(item.display_name ?? ""),
           lat: parseFloat(String(item.lat)),
           lon: parseFloat(String(item.lon)),
+          address:
+            item.address && typeof item.address === "object"
+              ? (item.address as Record<string, unknown>)
+              : undefined,
         }))
       : [];
 
@@ -88,4 +111,41 @@ export async function GET(request: NextRequest) {
       { status: 502 }
     );
   }
+}
+
+/**
+ * Nominatim is mounted at the public host root (`/search`) on the OSM server.
+ * Some environments expose it under `/nominatim/search`, and a configured
+ * NEXT_PUBLIC_GEOCODE_URL may already include the full search path, so try the
+ * known layouts in order and only fall through on a 404.
+ */
+async function fetchGeocodeSearch(params: URLSearchParams): Promise<Response> {
+  const base = GEOCODE_URL.replace(/\/+$/, "");
+  const candidates = /\/search$/.test(base)
+    ? [base]
+    : [`${base}/search`, `${base}/nominatim/search`];
+
+  let lastResponse: Response | null = null;
+
+  for (const candidate of candidates) {
+    const res = await fetch(`${candidate}?${params.toString()}`, {
+      headers: {
+        // Some Apache/Nominatim deployments return 406 for a strict JSON Accept
+        // header, so advertise JSON while still allowing the reverse proxy.
+        Accept: "application/json, text/plain, */*",
+        "User-Agent": "AnbessaBusStaffPortal/1.0 (admin route builder)",
+      },
+    });
+
+    if (res.ok || res.status !== 404) return res;
+    lastResponse = res;
+  }
+
+  return (
+    lastResponse ??
+    new Response(JSON.stringify({ message: "No geocoding endpoint found" }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" },
+    })
+  );
 }

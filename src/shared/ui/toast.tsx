@@ -93,7 +93,7 @@ function ToastCard({
     success: "bg-success/10 border-success/30 text-success",
     danger: "bg-danger/10 border-danger/30 text-danger",
     destructive: "bg-danger/10 border-danger/30 text-danger",
-    warning: "bg-warning/10 border-warning/30 text-warning",
+    warning: "bg-warning/10 border-warning/30 text-foreground",
   }[item.variant ?? "default"];
 
   return (

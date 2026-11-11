@@ -1,7 +1,10 @@
 import { z } from "zod";
 import type { components } from "@/types/api";
 
-export type Route = components["schemas"]["Route"];
+export type ApiRoute = components["schemas"]["Route"];
+export interface Route extends ApiRoute {
+  path_coordinates?: [number, number][];
+}
 export type RouteDirection = components["schemas"]["RouteDirection"];
 export type RouteStop = components["schemas"]["RouteStop"];
 

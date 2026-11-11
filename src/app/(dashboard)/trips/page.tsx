@@ -22,6 +22,7 @@ import {
 } from "@/shared/ui/table";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { PassengerBadge } from "@/shared/ui/passenger-badge";
 import { Input } from "@/shared/ui/input";
 import { StatusPill } from "@/shared/ui/status-pill";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -301,7 +302,7 @@ function TripsContent() {
                     return (
                       <TableRow
                         key={trip.id}
-                        className="cursor-pointer hover:bg-muted/40 transition-colors"
+                        className="cursor-pointer hover:bg-accent-soft/40 transition-colors"
                         onClick={() => setSelectedTrip(trip)}
                       >
                         <TableCell>
@@ -313,13 +314,18 @@ function TripsContent() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono font-medium text-foreground bg-muted/60 px-1.5 py-0.5 rounded text-xs">
-                            {trip.bus_targa || "—"}
-                          </span>
+                          <span className="plate-badge">{trip.bus_targa || "—"}</span>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium text-foreground">
-                            {trip.public_bus_number ? `Line ${trip.public_bus_number}` : "—"}
+                          <div className="flex items-center gap-1.5">
+                            {trip.public_bus_number ? (
+                              <>
+                                <span className="bus-number-badge">{trip.public_bus_number}</span>
+                                <span className="text-[11px] text-muted-foreground">line</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground truncate max-w-[160px]">
                             {trip.route_name || "—"}
@@ -344,8 +350,8 @@ function TripsContent() {
                             <span className="text-primary font-medium animate-pulse">En route</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right font-medium text-foreground">
-                          {trip.passenger_count ?? 0}
+                        <TableCell className="text-right">
+                          <PassengerBadge count={trip.passenger_count ?? 0} size="sm" />
                         </TableCell>
                         <TableCell className="text-right font-semibold text-foreground">
                           {formatETB(trip.revenue)}
@@ -386,7 +392,7 @@ function TripsContent() {
           onClick={() => setSelectedTrip(null)}
         >
           <div
-            className="h-full w-full max-w-xl bg-card border-l border-border p-6 shadow-2xl overflow-y-auto space-y-6"
+            className="livery-card h-full w-full max-w-xl bg-card border-l border-border p-6 shadow-2xl overflow-y-auto space-y-6"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drawer Header */}
@@ -404,8 +410,9 @@ function TripsContent() {
                 <h2 className="text-lg font-bold text-foreground mt-1">
                   {selectedTrip.summary_label || `Journey on ${selectedTrip.bus_targa}`}
                 </h2>
-                <p className="text-xs text-muted-foreground">
-                  Line {selectedTrip.public_bus_number}: {selectedTrip.route_name}
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="bus-number-badge">{selectedTrip.public_bus_number}</span>
+                  <span>{selectedTrip.route_name}</span>
                 </p>
               </div>
               <button
@@ -420,11 +427,14 @@ function TripsContent() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-lg border border-border bg-background p-3">
                 <span className="text-[11px] text-muted-foreground uppercase">Bus Plate</span>
-                <p className="text-sm font-bold font-mono text-foreground mt-0.5">{selectedTrip.bus_targa}</p>
+                <span className="plate-badge mt-1.5 text-xs">{selectedTrip.bus_targa}</span>
               </div>
               <div className="rounded-lg border border-border bg-background p-3">
                 <span className="text-[11px] text-muted-foreground uppercase">Passengers</span>
-                <p className="text-sm font-bold text-foreground mt-0.5">{selectedTrip.passenger_count}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-sm font-bold text-foreground">{selectedTrip.passenger_count}</p>
+                  <PassengerBadge count={selectedTrip.passenger_count} size="sm" />
+                </div>
               </div>
               <div className="rounded-lg border border-border bg-background p-3">
                 <span className="text-[11px] text-muted-foreground uppercase">Total Revenue</span>
@@ -478,8 +488,10 @@ function TripsContent() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Payment Ref</TableHead>
+                        <TableHead>Route / Line</TableHead>
+                        <TableHead>Ticket</TableHead>
                         <TableHead>Provider</TableHead>
-                        <TableHead>Amount</TableHead>
+                        <TableHead className="text-right">Amount / Passengers</TableHead>
                         <TableHead>Paid At</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
@@ -490,18 +502,52 @@ function TripsContent() {
                           <TableCell className="font-mono text-xs">
                             {p.provider_ref ? p.provider_ref.slice(0, 10) : p.id.slice(0, 8)}
                           </TableCell>
+                          <TableCell className="text-xs">
+                            {p.public_bus_number || p.route_name ? (
+                              <div className="flex items-center gap-1.5">
+                                {p.public_bus_number !== null && p.public_bus_number !== undefined && (
+                                  <span className="bus-number-badge">Line {p.public_bus_number}</span>
+                                )}
+                                <span className="text-foreground truncate max-w-[140px]">
+                                  {p.route_name ?? selectedTrip.route_name}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-foreground">{selectedTrip.route_name}</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {p.ticket?.code ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted/60 font-semibold text-primary">
+                                {p.ticket.code}
+                              </span>
+                            ) : p.ticket_id ? (
+                              <span className="text-muted-foreground">{p.ticket_id.slice(0, 8)}...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-xs capitalize text-foreground">
                             {p.provider || "Standard"}
                           </TableCell>
-                          <TableCell className="text-xs font-semibold text-foreground">
-                            {formatETB(p.amount)}
+                          <TableCell className="text-right">
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-xs font-semibold text-foreground">
+                                {formatETB(p.amount)}
+                              </span>
+                              <PassengerBadge
+                                count={p.passenger_count ?? p.quantity ?? p.ticket?.passenger_count ?? p.ticket?.quantity}
+                                unitFare={p.unit_fare ?? p.ticket?.unit_fare}
+                                size="sm"
+                              />
+                            </div>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                             {p.paid_at ? formatTime12h(p.paid_at) : "—"}
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={p.status === "succeeded" ? "accent" : "outline"}
+                              variant={p.status === "succeeded" ? "accent" : p.status === "failed" ? "outline" : "default"}
                               className="text-[10px] capitalize"
                             >
                               {p.status}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { API_TIMEOUT_MS, buildApiUrl } from "@/shared/api/server";
 
 export async function POST() {
   try {
@@ -10,15 +11,16 @@ export async function POST() {
       return NextResponse.json({ message: "No refresh token provided." }, { status: 401 });
     }
 
-    const apiBase = process.env.API_BASE_URL || "http://127.0.0.1:8000";
+    const targetUrl = buildApiUrl("/api/auth/refresh/");
 
-    const res = await fetch(`${apiBase}/api/auth/refresh/`, {
+    const res = await fetch(targetUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
       body: JSON.stringify({ refresh: refreshToken }),
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
     });
 
     const data = await res.json().catch(() => null);
@@ -44,6 +46,11 @@ export async function POST() {
 
     return response;
   } catch (error) {
+    console.error("[auth/refresh] Failed to refresh session", {
+      url: buildApiUrl("/api/auth/refresh/"),
+      message: error instanceof Error ? error.message : String(error),
+      cause: error instanceof Error ? error.cause : undefined,
+    });
     const message = error instanceof Error ? error.message : "Refresh failed";
     const response = NextResponse.json({ message }, { status: 500 });
     response.cookies.delete("access_token");

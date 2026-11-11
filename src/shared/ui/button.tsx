@@ -21,13 +21,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseClasses =
-      "inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none";
+      "inline-flex items-center justify-center font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 cursor-pointer select-none active:translate-y-px";
 
     const variantClasses = {
-      default: "bg-primary text-primary-foreground hover:opacity-90 active:opacity-95 shadow-sm",
-      accent: "bg-accent text-accent-foreground hover:opacity-90 active:opacity-95 shadow-sm",
+      default: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm",
+      accent: "bg-accent text-accent-foreground hover:bg-accent-strong shadow-sm",
       secondary: "bg-muted text-foreground hover:opacity-85 shadow-sm",
-      outline: "border border-border bg-card text-foreground hover:bg-muted shadow-sm",
+      outline: "border border-border bg-card text-foreground hover:border-primary/40 hover:bg-muted shadow-sm",
       ghost: "text-foreground hover:bg-muted",
       danger: "bg-danger text-danger-foreground hover:opacity-90 active:opacity-95 shadow-sm",
       link: "text-primary underline-offset-4 hover:underline p-0 h-auto",

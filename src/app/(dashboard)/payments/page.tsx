@@ -9,8 +9,6 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  BarChart,
-  Bar,
 } from "recharts";
 import { useReportsSummary } from "@/features/reports";
 import {
@@ -30,13 +28,15 @@ import {
 } from "@/shared/ui/table";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { PassengerBadge } from "@/shared/ui/passenger-badge";
 import { Input } from "@/shared/ui/input";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { NavIcon } from "@/shared/ui/icons";
-import { formatETB, formatDate } from "@/shared/lib/format";
+import { formatETB, formatDate, formatTime12h } from "@/shared/lib/format";
+import { usePayments } from "@/features/payments";
 
 type DatePreset = "today" | "7d" | "30d" | "all";
-type ActiveTab = "routes" | "days" | "buses";
+type ActiveTab = "routes" | "days" | "buses" | "transactions";
 
 function PaymentsContent() {
   const [preset, setPreset] = React.useState<DatePreset>("7d");
@@ -59,6 +59,7 @@ function PaymentsContent() {
   }, [preset, dateFrom, dateTo]);
 
   const { data: summary, isLoading } = useReportsSummary(queryParams);
+  const paymentsQuery = usePayments(queryParams);
 
   const handlePresetChange = (newPreset: DatePreset) => {
     setPreset(newPreset);
@@ -205,7 +206,7 @@ function PaymentsContent() {
                   <NavIcon name="tag" className="h-4 w-4" />
                 </span>
               </div>
-              <div className="text-2xl font-bold tracking-tight text-foreground mt-2">
+              <div className="text-2xl font-bold tracking-tight tabular-nums text-foreground mt-2">
                 {formatETB(totals.revenue)}
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
@@ -222,7 +223,7 @@ function PaymentsContent() {
                   <NavIcon name="users" className="h-4 w-4" />
                 </span>
               </div>
-              <div className="text-2xl font-bold tracking-tight text-foreground mt-2">
+              <div className="text-2xl font-bold tracking-tight tabular-nums text-foreground mt-2">
                 {totals.passengers_count.toLocaleString()}
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
@@ -239,7 +240,7 @@ function PaymentsContent() {
                   <NavIcon name="calendar-clock" className="h-4 w-4" />
                 </span>
               </div>
-              <div className="text-2xl font-bold tracking-tight text-foreground mt-2">
+              <div className="text-2xl font-bold tracking-tight tabular-nums text-foreground mt-2">
                 {totals.trips_count.toLocaleString()}
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
@@ -256,7 +257,7 @@ function PaymentsContent() {
                   <NavIcon name="bus" className="h-4 w-4" />
                 </span>
               </div>
-              <div className="text-2xl font-bold tracking-tight text-foreground mt-2">
+              <div className="text-2xl font-bold tracking-tight tabular-nums text-foreground mt-2">
                 {formatETB(avgRevPerTrip)}
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
@@ -380,6 +381,14 @@ function PaymentsContent() {
               >
                 By Bus ({summary?.by_bus?.length ?? 0})
               </Button>
+              <Button
+                variant={activeTab === "transactions" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 text-xs px-3"
+                onClick={() => setActiveTab("transactions")}
+              >
+                Transactions ({paymentsQuery.data?.length ?? 0})
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -415,8 +424,9 @@ function PaymentsContent() {
                       const share = totalRevNum > 0 ? (itemRev / totalRevNum) * 100 : 0;
                       return (
                         <TableRow key={item.route_id}>
-                          <TableCell className="font-bold text-foreground">
-                            Line {item.public_bus_number}
+                          <TableCell>
+                            <span className="bus-number-badge">{item.public_bus_number}</span>
+                            <span className="ml-1.5 text-[11px] text-muted-foreground">line</span>
                           </TableCell>
                           <TableCell className="text-foreground">{item.route_name}</TableCell>
                           <TableCell className="text-right font-medium text-foreground">
@@ -471,7 +481,7 @@ function PaymentsContent() {
                 </Table>
               </div>
             )
-          ) : (
+          ) : activeTab === "buses" ? (
             /* By Bus Table */
             !summary?.by_bus || summary.by_bus.length === 0 ? (
               <div className="p-10 text-center text-muted-foreground text-sm">
@@ -490,8 +500,8 @@ function PaymentsContent() {
                   <TableBody>
                     {summary.by_bus.map((item) => (
                       <TableRow key={item.bus_id}>
-                        <TableCell className="font-mono font-bold text-foreground">
-                          {item.targa}
+                        <TableCell>
+                          <span className="plate-badge">{item.targa}</span>
                         </TableCell>
                         <TableCell className="text-right font-medium text-foreground">
                           {item.passengers.toLocaleString()}
@@ -501,6 +511,115 @@ function PaymentsContent() {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )
+          ) : (
+            /* Transactions Table */
+            paymentsQuery.isLoading ? (
+              <div className="p-6 space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            ) : !paymentsQuery.data || paymentsQuery.data.length === 0 ? (
+              <div className="p-10 text-center text-muted-foreground text-sm">
+                No payment transactions available for this range.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Payment Ref / ID</TableHead>
+                      <TableHead>Route / Line</TableHead>
+                      <TableHead>Ticket</TableHead>
+                      <TableHead>Provider</TableHead>
+                      <TableHead className="text-right">Amount / Passengers</TableHead>
+                      <TableHead>Date / Time</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paymentsQuery.data.map((p) => {
+                      const ref = p.provider_ref || (p.id ? p.id.slice(0, 8) : "—");
+                      const ticketCode = p.ticket?.code ?? p.ticket_id ?? null;
+                      const passengerCount =
+                        p.passenger_count ??
+                        p.quantity ??
+                        p.ticket?.passenger_count ??
+                        p.ticket?.quantity ??
+                        1;
+                      const unitFare = p.unit_fare ?? p.ticket?.unit_fare;
+
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-mono text-xs font-medium text-foreground">
+                            {ref}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              {p.public_bus_number ? (
+                                <span className="bus-number-badge">{p.public_bus_number}</span>
+                              ) : null}
+                              <span className="text-sm text-foreground">
+                                {p.route_name || "—"}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {ticketCode ? (
+                              <div className="flex flex-col gap-1 items-start">
+                                <span className="rounded bg-muted px-1.5 py-0.5 font-semibold text-foreground">
+                                  {ticketCode}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs uppercase text-muted-foreground">
+                            {p.provider}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="font-semibold text-foreground">
+                                {formatETB(p.amount)}
+                              </span>
+                              <PassengerBadge
+                                count={passengerCount}
+                                unitFare={unitFare}
+                                size="sm"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {p.created_at ? (
+                              <>
+                                <span>{formatDate(p.created_at)}</span>
+                                <span className="ml-1.5 opacity-75">{formatTime12h(p.created_at)}</span>
+                              </>
+                            ) : (
+                              "—"
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                p.status === "succeeded"
+                                  ? "success"
+                                  : p.status === "pending"
+                                  ? "warning"
+                                  : "danger"
+                              }
+                            >
+                              {p.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

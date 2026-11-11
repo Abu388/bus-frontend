@@ -2,8 +2,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { routesApi } from "./api";
 import { routeKeys } from "./keys";
 import type { Route, CreateRouteFormData, UpdateRouteFormData } from "./schemas";
+import type { BuildRoutePayload } from "./builder/schemas";
+import { fermataKeys } from "@/features/fermatas/keys";
+import { stopKeys } from "@/features/stops/keys";
+import { directionKeys } from "@/features/directions/keys";
 import { useToast } from "@/shared/ui/toast";
 import { AppError } from "@/shared/api/errors";
+
+function invalidateRouteGraph(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: routeKeys.all });
+  queryClient.invalidateQueries({ queryKey: fermataKeys.all });
+  queryClient.invalidateQueries({ queryKey: stopKeys.all });
+  queryClient.invalidateQueries({ queryKey: directionKeys.all });
+}
 
 export function useRoutes() {
   return useQuery({
@@ -71,23 +82,30 @@ export function useUpdateRoute() {
 
 export function useDeleteRoute() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation<void, AppError, string>({
     mutationFn: (id: string) => routesApi.deleteRoute(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: routeKeys.lists() });
-      toast({
-        title: "Route Deleted",
-        description: "The route was successfully removed.",
-      });
+      invalidateRouteGraph(queryClient);
     },
-    onError: (error) => {
-      toast({
-        title: "Failed to delete route",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+    // Errors are surfaced inline inside the delete confirmation dialog.
+  });
+}
+
+export function useBuildRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Route, AppError, BuildRoutePayload>({
+    mutationFn: (payload) => routesApi.buildRoute(payload),
+    onSuccess: () => invalidateRouteGraph(queryClient),
+  });
+}
+
+export function useUpdateBuiltRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Route, AppError, { id: string; payload: BuildRoutePayload }>({
+    mutationFn: ({ id, payload }) => routesApi.updateBuiltRoute(id, payload),
+    onSuccess: () => invalidateRouteGraph(queryClient),
   });
 }

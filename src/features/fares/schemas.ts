@@ -6,7 +6,8 @@ export type FareHistory = components["schemas"]["FareHistory"];
 
 export const CreateFareSchema = z.object({
   route: z.string().uuid("Invalid route UUID"),
-  amount: z.number().positive("Fare amount must be greater than 0"),
+  amount: z.coerce.number().positive("Fare amount must be greater than 0"),
 });
 
 export type CreateFareFormData = z.infer<typeof CreateFareSchema>;
+export type CreateFareFormInput = z.input<typeof CreateFareSchema>;

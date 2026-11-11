@@ -39,8 +39,11 @@ export function generateBrandCss(): string {
   --input: ${t.input};
   --primary: ${t.primary};
   --primary-foreground: ${t.primaryForeground};
+  --primary-hover: ${t.primaryHover};
   --accent: ${t.accent};
   --accent-foreground: ${t.accentForeground};
+  --accent-strong: ${t.accentStrong};
+  --accent-soft: ${t.accentSoft};
   --success: ${t.success};
   --success-foreground: ${t.successForeground};
   --warning: ${t.warning};

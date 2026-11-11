@@ -5,17 +5,19 @@ import { fermataKeys } from "@/features/fermatas/keys";
 import { fareKeys } from "@/features/fares/keys";
 import { tripKeys } from "@/features/trips/keys";
 import { trackingKeys } from "@/features/tracking/keys";
-import { reportKeys } from "@/features/reports/keys";
 import { auditKeys } from "@/features/audit/keys";
 import { geoKeys } from "@/features/geo/keys";
+import { userKeys } from "@/features/users/keys";
 
 describe("Query key factories", () => {
-  it("generates structured bus query keys", () => {
+  it("generates structured bus and user query keys", () => {
     expect(busKeys.all).toEqual(["buses"]);
     expect(busKeys.lists()).toEqual(["buses", "list"]);
     expect(busKeys.list({ status: "active" })).toEqual(["buses", "list", { status: "active" }]);
     expect(busKeys.detail("bus-123")).toEqual(["buses", "detail", "bus-123"]);
     expect(busKeys.maintenanceList("bus-123")).toEqual(["buses", "maintenance", { busId: "bus-123" }]);
+    expect(userKeys.all).toEqual(["users"]);
+    expect(userKeys.cashers()).toEqual(["users", "cashers"]);
   });
 
   it("generates structured route and fermata query keys", () => {
@@ -37,5 +39,10 @@ describe("Query key factories", () => {
     expect(trackingKeys.search("124")).toEqual(["tracking", "search", "124"]);
     expect(geoKeys.search("Mexico")).toEqual(["geo", "search", "mexico"]);
     expect(geoKeys.reverse(9.01, 38.74)).toEqual(["geo", "reverse", "9.0100,38.7400"]);
+    expect(geoKeys.osmBusStops("38.7,8.9,38.8,9.0")).toEqual([
+      "geo",
+      "osm-bus-stops",
+      "38.7,8.9,38.8,9.0",
+    ]);
   });
 });

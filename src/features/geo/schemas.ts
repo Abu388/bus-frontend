@@ -12,6 +12,7 @@ export interface GeocodePlace {
   displayName: string;
   lat: number;
   lon: number;
+  address?: Record<string, unknown>;
 }
 
 export interface RouteCalculationResult {
@@ -19,4 +20,10 @@ export interface RouteCalculationResult {
   distanceMeters: number;
   durationSeconds: number;
   isFallback?: boolean;
+}
+
+export interface NearestRoadResult {
+  snapped: { lat: number; lon: number };
+  name: string;
+  distanceMeters: number;
 }

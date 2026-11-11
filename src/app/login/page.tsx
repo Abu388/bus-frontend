@@ -1,18 +1,13 @@
 "use client";
 
-import * as React from "react";
-import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getActiveBrand } from "@/brands";
-import { BrandLogo, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Input, Button } from "@/shared/ui";
+import { BrandLogo, Input, Button } from "@/shared/ui";
 import { LoginSchema, type LoginFormData } from "@/features/auth/schemas";
 import { useLogin } from "@/features/auth/hooks";
 
 function LoginForm() {
-  const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/dashboard";
-
   const brand = getActiveBrand();
   const loginMutation = useLogin();
 
@@ -35,111 +30,164 @@ function LoginForm() {
   const isBlockedRole = loginMutation.error?.status === 403;
 
   return (
-    <div className="w-full max-w-md space-y-6">
-      <div className="flex flex-col items-center text-center space-y-2">
-        <BrandLogo size="lg" className="mb-2" />
-        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-          {brand.name}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Central Staff & Fleet Administration Platform
-        </p>
+    <div className="livery-card w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card shadow-xl lg:grid lg:grid-cols-[1.05fr_1fr]">
+      {/* Brand hero */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-10 text-sidebar-foreground lg:flex">
+        <div
+          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-accent-strong/10 blur-3xl"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-primary/25 blur-3xl"
+          aria-hidden="true"
+        />
+
+        <div className="relative space-y-8">
+          <BrandLogo size="lg" onDark />
+          <div className="space-y-4">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.35em] text-accent-strong">
+              Addis Ababa · Fleet Command
+            </p>
+            <h1 className="max-w-sm text-4xl font-extrabold leading-tight tracking-tight text-sidebar-foreground">
+              Move the city,
+              <span className="block text-accent-strong">one route at a time.</span>
+            </h1>
+            <p className="max-w-sm text-sm leading-relaxed text-sidebar-muted">
+              Live fleet tracking, route sequencing, fare control, and
+              operational reporting for Ethiopia&apos;s public bus network.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="plate-badge !border-sidebar-border !bg-white/5 !text-sidebar-foreground !text-[11px]">
+              3-AA-12401
+            </span>
+            <span className="bus-number-badge px-2 py-0.5 text-sm">
+              LINE 124
+            </span>
+            <span className="rounded-md border border-sidebar-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-sidebar-muted">
+              Mexico ↔ Megenagna
+            </span>
+          </div>
+        </div>
+
+        <div className="relative flex items-center justify-between border-t border-sidebar-border pt-5 text-[10px] uppercase tracking-wider text-sidebar-muted">
+          <span>Anbessa City Bus</span>
+          <span>Staff access only</span>
+        </div>
       </div>
 
-      <Card className="border-border bg-card shadow-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-lg font-semibold">Sign in</CardTitle>
-          <CardDescription>
-            Enter your administrator credentials to access the portal
-          </CardDescription>
-        </CardHeader>
+      {/* Sign-in form */}
+      <div className="p-6 sm:p-8 lg:p-10">
+        <div className="mb-7 flex items-center justify-between gap-4 lg:hidden">
+          <BrandLogo size="md" />
+          <span className="rounded border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Staff
+          </span>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {loginMutation.error && (
-              <div
-                role="alert"
-                className={`rounded-lg border p-3 text-xs leading-relaxed ${
-                  isBlockedRole
-                    ? "border-warning bg-warning/10 text-warning"
-                    : "border-danger bg-danger/10 text-danger"
-                }`}
-              >
-                <p className="font-semibold mb-0.5">
-                  {isBlockedRole ? "Mobile App Required" : "Authentication Failed"}
-                </p>
-                <p>{loginMutation.error.message}</p>
-              </div>
-            )}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Administrator sign in
+          </p>
+          <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
+            {brand.name}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Enter your staff credentials to open the fleet console.
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <label
-                htmlFor="identifier"
-                className="block text-xs font-medium text-foreground uppercase tracking-wider"
-              >
-                Email or Phone
-              </label>
-              <Input
-                id="identifier"
-                type="text"
-                placeholder="Enter email, phone, or username"
-                autoComplete="username"
-                disabled={loginMutation.isPending}
-                {...register("identifier")}
-              />
-              {errors.identifier && (
-                <p className="text-xs text-danger">{errors.identifier.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="block text-xs font-medium text-foreground uppercase tracking-wider"
-              >
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="current-password"
-                disabled={loginMutation.isPending}
-                {...register("password")}
-              />
-              {errors.password && (
-                <p className="text-xs text-danger">{errors.password.message}</p>
-              )}
-            </div>
-          </CardContent>
-
-          <CardFooter className="flex flex-col space-y-4 pt-2">
-            <Button
-              type="submit"
-              variant="default"
-              size="lg"
-              className="w-full font-semibold"
-              isLoading={loginMutation.isPending}
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-7 space-y-5">
+          {loginMutation.error && (
+            <div
+              role="alert"
+              className={`rounded-lg border p-3 text-xs leading-relaxed ${
+                isBlockedRole
+                  ? "border-warning/40 bg-warning/10 text-foreground"
+                  : "border-danger/40 bg-danger/10 text-danger"
+              }`}
             >
-              Sign In to Platform
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+              <p className="mb-0.5 font-semibold">
+                {isBlockedRole ? "Mobile App Required" : "Authentication Failed"}
+              </p>
+              <p>{loginMutation.error.message}</p>
+            </div>
+          )}
 
-      <p className="text-center text-xs text-muted-foreground">
-        Protected by httpOnly cookie-based session verification
-      </p>
+          <div className="space-y-2">
+            <label
+              htmlFor="identifier"
+              className="block text-xs font-semibold uppercase tracking-wider text-foreground"
+            >
+              Email or phone
+            </label>
+            <Input
+              id="identifier"
+              type="text"
+              placeholder="Enter email, phone, or username"
+              autoComplete="username"
+              disabled={loginMutation.isPending}
+              {...register("identifier")}
+            />
+            {errors.identifier && (
+              <p className="text-xs text-danger">{errors.identifier.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="password"
+              className="block text-xs font-semibold uppercase tracking-wider text-foreground"
+            >
+              Password
+            </label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              disabled={loginMutation.isPending}
+              {...register("password")}
+            />
+            {errors.password && (
+              <p className="text-xs text-danger">{errors.password.message}</p>
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            variant="default"
+            size="lg"
+            className="w-full"
+            isLoading={loginMutation.isPending}
+          >
+            Sign in to platform
+          </Button>
+
+          <div className="flex items-center gap-3 pt-1">
+            <span className="h-px flex-1 bg-border" />
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              Secure session
+            </span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+            Protected by httpOnly cookie-based session verification.
+            <br />
+            Contact your fleet administrator if you need access.
+          </p>
+        </form>
+      </div>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 sm:p-6 bg-background">
-      <React.Suspense fallback={<div className="text-sm text-muted-foreground">Loading authentication...</div>}>
-        <LoginForm />
-      </React.Suspense>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-6 lg:p-8">
+      <LoginForm />
     </div>
   );
 }

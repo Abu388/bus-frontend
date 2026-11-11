@@ -67,6 +67,13 @@ export const navigationItems: NavigationItem[] = [
     category: "operations",
   },
   {
+    id: "users-cashers",
+    label: "Users / Cashers",
+    href: "/users",
+    icon: "users",
+    category: "operations",
+  },
+  {
     id: "maintenance",
     label: "Maintenance",
     href: "/maintenance",
@@ -86,14 +93,5 @@ export const navigationItems: NavigationItem[] = [
     href: "/reports",
     icon: "bar-chart",
     category: "system",
-  },
-  {
-    id: "users-and-roles",
-    label: "Users & Roles",
-    href: "/users",
-    icon: "users",
-    category: "system",
-    disabled: true,
-    badge: "Needs backend endpoints",
   },
 ];

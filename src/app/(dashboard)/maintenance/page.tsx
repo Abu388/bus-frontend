@@ -157,9 +157,7 @@ export default function MaintenancePage() {
                     return (
                       <TableRow key={event.id}>
                         <TableCell>
-                          <span className="font-mono font-bold text-foreground bg-muted/60 px-2 py-0.5 rounded text-xs">
-                            {plate}
-                          </span>
+                          <span className="plate-badge">{plate}</span>
                         </TableCell>
                         <TableCell className="font-semibold text-foreground text-xs">
                           {event.reason}

@@ -1,7 +1,14 @@
 import { z } from "zod";
 import type { components } from "@/types/api";
 
-export type BusLiveState = components["schemas"]["BusLiveState"];
+export type ApiBusLiveState = components["schemas"]["BusLiveState"];
+
+export interface BusLiveState extends ApiBusLiveState {
+  route?: string | null;
+  public_bus_number?: number | string | null;
+  route_name?: string | null;
+  targa?: string | null;
+}
 
 export interface BusETAItem {
   fermata_id: string;

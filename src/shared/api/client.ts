@@ -5,37 +5,50 @@ import type { RequestOptions } from "./types";
 let requestCounter = 0;
 
 /**
- * Normalizes an API path ensuring proper prefixing and mandatory trailing slashes.
- * e.g., "/buses" -> "/api/proxy/buses/"
- *       "/api/proxy/buses" -> "/api/proxy/buses/"
- *       "buses" -> "/api/proxy/buses/"
- *       "/api/geo/search" -> "/api/geo/search" (geo endpoints do not use trailing slashes)
+ * Normalizes an API path for browser-side requests.
+ * Next.js triggers a 308 redirect on endpoints with trailing slashes,
+ * so browser-side proxy requests MUST NOT have a trailing slash.
+ * e.g., "/buses" -> "/api/proxy/buses"
+ *       "/buses/" -> "/api/proxy/buses"
+ *       "buses" -> "/api/proxy/buses"
+ *       "/api/proxy/buses" -> "/api/proxy/buses"
+ *       "/api/proxy/buses/" -> "/api/proxy/buses"
+ *       "/api/geo/search" -> "/api/geo/search"
+ *       "/api/auth/login" -> "/api/auth/login"
+ *       "" or "/" -> "/api/proxy"
  */
 export function normalizeApiPath(path: string): string {
-  // If already absolute URL or geo/auth path
+  // If already absolute URL
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
   }
 
-  // Geo and Auth routes
-  if (path.startsWith("/api/geo") || path.startsWith("/api/auth")) {
-    return path;
+  // Geo, Auth, and atomic route-build BFF routes: preserve without trailing
+  // slashes. These are same-origin Next.js route handlers, not Django proxy
+  // endpoints.
+  if (
+    path.startsWith("/api/geo") ||
+    path.startsWith("/api/auth") ||
+    path.startsWith("/api/routes")
+  ) {
+    return path.replace(/\/+$/, "");
   }
 
-  let clean = path;
+  let clean = path.trim();
   if (clean.startsWith("/api/proxy")) {
     clean = clean.replace(/^\/api\/proxy\/?/, "");
   } else if (clean.startsWith("/")) {
-    clean = clean.slice(1);
+    clean = clean.replace(/^\/+/, "");
   }
 
-  // Preserve trailing slash for Django endpoints
+  // Strip trailing slashes so Next.js does not trigger 308 redirect
+  clean = clean.replace(/\/+$/, "");
+
   if (clean === "") {
-    return "/api/proxy/";
+    return "/api/proxy";
   }
 
-  const slashClean = clean.endsWith("/") ? clean : `${clean}/`;
-  return `/api/proxy/${slashClean}`;
+  return `/api/proxy/${clean}`;
 }
 
 export function buildUrlWithParams(
@@ -70,6 +83,16 @@ async function executeWithRetry<T>(
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const externalSignal = options.signal;
+
+  const handleExternalAbort = () => controller.abort();
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener("abort", handleExternalAbort);
+    }
+  }
 
   const requestId = `req_${++requestCounter}_${Date.now()}`;
   serverWakingStore.startRequest(requestId);
@@ -92,9 +115,15 @@ async function executeWithRetry<T>(
 
     clearTimeout(timeoutId);
 
-    // If 204 No Content
-    if (response.status === 204) {
-      return {} as T;
+    // Successful deletes commonly return 204 No Content (or an empty body).
+    // Calling response.json() on an empty 204 body throws
+    // "Unexpected end of JSON input" and makes a successful delete look like a
+    // failure, so short-circuit before any body parsing.
+    if (
+      response.status === 204 ||
+      (response.ok && response.headers.get("content-length") === "0")
+    ) {
+      return undefined as T;
     }
 
     let responseData: unknown = null;
@@ -141,6 +170,17 @@ async function executeWithRetry<T>(
       err instanceof Error &&
       (err.name === "AbortError" || err.message.includes("aborted"));
 
+    // A caller-initiated abort (e.g. a stale builder request) must never be
+    // retried or reported as a backend failure.
+    if (isAbort && externalSignal?.aborted) {
+      throw new AppError({
+        status: 499,
+        code: "ABORTED",
+        message: "Request cancelled.",
+        raw: err,
+      });
+    }
+
     // Retry network failure or timeout for GET
     if (method === "GET" && currentAttempt < maxRetries) {
       const delay = Math.pow(2, currentAttempt) * 500;
@@ -160,6 +200,7 @@ async function executeWithRetry<T>(
     throw normalizeError(err, 500);
   } finally {
     clearTimeout(timeoutId);
+    externalSignal?.removeEventListener("abort", handleExternalAbort);
     serverWakingStore.endRequest(requestId);
   }
 }
@@ -222,7 +263,7 @@ export const httpClient = {
    */
   warmBackend(): void {
     if (typeof window === "undefined") return;
-    fetch("/api/proxy/health/", { method: "GET" }).catch(() => {
+    fetch("/api/proxy/health", { method: "GET" }).catch(() => {
       // Ignore background warm-up error
     });
   },

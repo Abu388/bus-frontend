@@ -114,7 +114,7 @@ export function DialogContent({
         role="dialog"
         aria-modal="true"
         className={cn(
-          "relative z-50 w-full max-w-lg rounded-xl border border-border bg-card p-6 text-card-foreground shadow-2xl transition-all animate-in fade-in-0 zoom-in-95",
+          "livery-card relative z-50 w-full max-w-lg rounded-xl border border-border bg-card p-6 text-card-foreground shadow-2xl transition-all animate-in fade-in-0 zoom-in-95",
           className
         )}
       >

@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { geoApi } from "./api";
 import { geoKeys } from "./keys";
-import type { LatLng, GeocodePlace, RouteCalculationResult } from "./schemas";
+import type { LatLng, RouteCalculationResult } from "./schemas";
 
 export function useGeoSearch(query: string, enabled = true) {
   const clean = query?.trim() ?? "";
@@ -10,6 +10,20 @@ export function useGeoSearch(query: string, enabled = true) {
     queryFn: () => geoApi.searchPlaces(clean),
     enabled: enabled && clean.length >= 2,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Bounded Nominatim search for OSM-mapped bus stops inside the current map
+ * viewport. Disabled until the caller has a viewbox (and is zoomed in).
+ */
+export function useOsmBusStops(viewbox?: string, enabled = true) {
+  return useQuery({
+    queryKey: geoKeys.osmBusStops(viewbox),
+    queryFn: () =>
+      geoApi.searchPlaces("bus stop", 20, { viewbox, bounded: true }),
+    enabled: enabled && Boolean(viewbox),
+    staleTime: 10 * 60 * 1000,
   });
 }
 

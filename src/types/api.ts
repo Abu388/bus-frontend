@@ -1186,6 +1186,11 @@ export interface components {
             targa?: string;
             /** Format: uuid */
             route?: string | null;
+            readonly route_number?: number | null;
+            readonly route_name?: string | null;
+            /** Format: uuid */
+            casher?: string | null;
+            readonly casher_name?: string | null;
             status?: components["schemas"]["PhysicalBusStatusEnum"];
             /** Format: date-time */
             readonly created_at?: string;
@@ -1290,6 +1295,11 @@ export interface components {
             targa: string;
             /** Format: uuid */
             route?: string | null;
+            readonly route_number?: number | null;
+            readonly route_name?: string | null;
+            /** Format: uuid */
+            casher?: string | null;
+            readonly casher_name?: string | null;
             status?: components["schemas"]["PhysicalBusStatusEnum"];
             /** Format: date-time */
             readonly created_at: string;

@@ -44,9 +44,9 @@ export async function GET(request: NextRequest) {
   }
 
   const { lat, lon } = parsed.data;
-  // Round to 4 decimal places for caching (~11m precision)
-  const roundLat = lat.toFixed(4);
-  const roundLon = lon.toFixed(4);
+  // Round to 5 decimal places (~1m precision) for a stable cache key.
+  const roundLat = lat.toFixed(5);
+  const roundLon = lon.toFixed(5);
   const cacheKey = `reverse:${roundLat},${roundLon}`;
 
   const cached = geoReverseCache.get(cacheKey);
@@ -56,11 +56,15 @@ export async function GET(request: NextRequest) {
 
   // 4. Request from backend Nominatim
   try {
-    const url = `${GEOCODE_URL}/reverse?lat=${lat}&lon=${lon}&format=json`;
+    const url =
+      `${GEOCODE_URL}/reverse?lat=${roundLat}&lon=${roundLon}` +
+      "&format=json&addressdetails=1&zoom=18&accept-language=en";
     const res = await fetch(url, {
       headers: {
-        Accept: "application/json",
-        "User-Agent": "AnbessaBusStaffPortal/1.0",
+        // Apache in front of this Nominatim instance returns 406 for a strict
+        // JSON Accept header, so include a wildcard fallback.
+        Accept: "application/json, text/plain, */*",
+        "User-Agent": "AnbessaBusStaffPortal/1.0 (admin route builder)",
       },
     });
 
@@ -80,7 +84,7 @@ export async function GET(request: NextRequest) {
       lon: parseFloat(String(data.lon ?? lon)),
     };
 
-    geoReverseCache.set(cacheKey, result, 15 * 60 * 1000); // 15 min TTL
+    geoReverseCache.set(cacheKey, result, 10 * 60 * 1000); // 10 min TTL
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(

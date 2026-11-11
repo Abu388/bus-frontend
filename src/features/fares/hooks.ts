@@ -13,7 +13,11 @@ export function useFares(params?: { active?: boolean; route?: string }) {
   });
 }
 
-export function useFareHistory(params?: { route?: string }) {
+export function useFareHistory(params?: {
+  route?: string;
+  page?: number;
+  page_size?: number;
+}) {
   return useQuery({
     queryKey: fareKeys.history(params),
     queryFn: () => faresApi.getFareHistory(params),
@@ -27,7 +31,9 @@ export function useCreateFare() {
   return useMutation<Fare, AppError, CreateFareFormData>({
     mutationFn: (data) => faresApi.createFare(data),
     onSuccess: (newFare) => {
-      queryClient.invalidateQueries({ queryKey: fareKeys.lists() });
+      // Invalidate the entire fares namespace so both the active tariff cards
+      // and the fare history audit table refresh immediately.
+      queryClient.invalidateQueries({ queryKey: fareKeys.all });
       queryClient.invalidateQueries({ queryKey: fareKeys.histories() });
       toast({
         title: "Fare Updated",

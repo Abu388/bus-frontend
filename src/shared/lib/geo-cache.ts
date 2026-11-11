@@ -29,6 +29,7 @@ class MemoryCache<T> {
 export const geoSearchCache = new MemoryCache<unknown>();
 export const geoReverseCache = new MemoryCache<unknown>();
 export const geoRouteCache = new MemoryCache<unknown>();
+export const geoNearestCache = new MemoryCache<unknown>();
 
 // Light rate limiter: 60 requests per minute per client IP/session
 interface RateLimitRecord {

@@ -12,8 +12,11 @@
   --color-input: var(--input);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
@@ -21,6 +24,12 @@
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
   --font-sans: var(--font-sans);
 }
 
@@ -33,5 +42,118 @@
     background-color: var(--background);
     color: var(--foreground);
     min-height: 100vh;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  thead {
+    background-color: var(--muted);
+  }
+
+  thead th {
+    color: var(--muted-foreground);
+  }
+
+  tbody tr {
+    transition: background-color 150ms ease;
+  }
+
+  tbody tr:hover {
+    background-color: color-mix(in srgb, var(--accent-soft) 45%, var(--card));
+  }
+
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+}
+
+@layer components {
+  .livery-stripe {
+    background: linear-gradient(
+      90deg,
+      var(--primary) 0%,
+      var(--primary) 50%,
+      var(--accent-strong) 50%,
+      var(--accent-strong) 100%
+    );
+  }
+
+  .livery-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .livery-card::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      var(--primary) 0%,
+      var(--primary) 50%,
+      var(--accent-strong) 50%,
+      var(--accent-strong) 100%
+    );
+    pointer-events: none;
+  }
+
+  .bus-number-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    border-radius: 0.375rem;
+    border: 1px solid color-mix(in srgb, var(--accent-foreground) 55%, transparent);
+    background-color: var(--accent-strong);
+    color: var(--accent-foreground);
+    padding: 0.0625rem 0.4rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+  }
+
+  .plate-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    color: var(--foreground);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sidebar) 8%, transparent);
+    padding: 0.0625rem 0.45rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .custom-bus-marker,
+  .custom-fermata-marker,
+  .custom-picker-marker {
+    background: transparent;
+    border: 0;
+  }
+
+  .leaflet-popup-content-wrapper,
+  .leaflet-tooltip {
+    background-color: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--sidebar) 18%, transparent);
+  }
+
+  .leaflet-popup-tip {
+    background-color: var(--card);
+    border: 1px solid var(--border);
   }
 }

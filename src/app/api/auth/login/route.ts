@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { API_TIMEOUT_MS, buildApiUrl } from "@/shared/api/server";
 
 export async function POST(request: Request) {
   try {
@@ -12,27 +13,37 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiBase = process.env.API_BASE_URL || "http://127.0.0.1:8000";
+    const targetUrl = buildApiUrl("/api/auth/login/");
 
     // Call Django REST backend endpoint
     let djangoResponse: Response;
     try {
-      djangoResponse = await fetch(`${apiBase}/api/auth/login/`, {
+      djangoResponse = await fetch(targetUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
         body: JSON.stringify({ identifier, password }),
+        signal: AbortSignal.timeout(API_TIMEOUT_MS),
       });
-    } catch {
+    } catch (err) {
+      console.error("[auth/login] Failed to reach authentication server", {
+        url: targetUrl,
+        message: err instanceof Error ? err.message : String(err),
+        cause: err instanceof Error ? err.cause : undefined,
+      });
       return NextResponse.json(
         { message: "Unable to connect to the authentication server. Please try again later." },
         { status: 503 }
       );
     }
 
-    const data = await djangoResponse.json().catch(() => null);
+    const rawData = await djangoResponse.json().catch(() => null);
+    // Django returns tokens/user at the top level. Support a wrapped `data`
+    // envelope defensively in case of gateway changes.
+    const data =
+      rawData?.data && typeof rawData.data === "object" ? rawData.data : rawData;
 
     if (!djangoResponse.ok) {
       const message =
@@ -72,7 +83,15 @@ export async function POST(request: Request) {
       phone: user.phone,
     };
 
-    const response = NextResponse.json({ user: clientUser }, { status: 200 });
+    const response = NextResponse.json(
+      {
+        user: clientUser,
+        id: clientUser.id,
+        role: clientUser.role,
+        full_name: clientUser.full_name,
+      },
+      { status: 200 }
+    );
 
     const isProd = process.env.NODE_ENV === "production";
 

@@ -25,6 +25,25 @@ export function useBus(id: string) {
   });
 }
 
+export function invalidateFleetRelatedQueries(
+  queryClient: { invalidateQueries: (options: { queryKey: readonly unknown[] }) => unknown },
+  busId?: string
+) {
+  queryClient.invalidateQueries({ queryKey: busKeys.lists() });
+  if (busId) {
+    queryClient.invalidateQueries({ queryKey: busKeys.detail(busId) });
+    queryClient.invalidateQueries({ queryKey: busKeys.maintenanceList(busId) });
+  }
+  queryClient.invalidateQueries({ queryKey: busKeys.maintenances() });
+  // Requirement 2: Auto-invalidate trips, live-buses, tracking, and dashboard React Query caches
+  // so that assign/unassign casher immediately updates Trips and Live Map
+  queryClient.invalidateQueries({ queryKey: ["trips"] });
+  queryClient.invalidateQueries({ queryKey: ["tracking"] });
+  queryClient.invalidateQueries({ queryKey: ["live-buses"] });
+  queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+  queryClient.invalidateQueries({ queryKey: ["reports"] });
+}
+
 export function useCreateBus() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -32,7 +51,7 @@ export function useCreateBus() {
   return useMutation<PhysicalBus, AppError, CreateBusFormData>({
     mutationFn: (data) => busesApi.createBus(data),
     onSuccess: (newBus) => {
-      queryClient.invalidateQueries({ queryKey: busKeys.lists() });
+      invalidateFleetRelatedQueries(queryClient, newBus.id);
       toast({
         title: "Bus Created",
         description: `Bus ${newBus.targa} was successfully registered.`,
@@ -55,10 +74,7 @@ export function useUpdateBus() {
   return useMutation<PhysicalBus, AppError, { id: string; data: UpdateBusFormData }>({
     mutationFn: ({ id, data }) => busesApi.updateBus(id, data),
     onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: busKeys.lists() });
-      if (updated.id) {
-        queryClient.invalidateQueries({ queryKey: busKeys.detail(updated.id) });
-      }
+      invalidateFleetRelatedQueries(queryClient, updated.id);
       toast({
         title: "Bus Updated",
         description: `Bus ${updated.targa} was successfully updated.`,
@@ -81,10 +97,7 @@ export function useRetireBus() {
   return useMutation<PhysicalBus, AppError, string>({
     mutationFn: (id: string) => busesApi.retireBus(id),
     onSuccess: (retired) => {
-      queryClient.invalidateQueries({ queryKey: busKeys.lists() });
-      if (retired.id) {
-        queryClient.invalidateQueries({ queryKey: busKeys.detail(retired.id) });
-      }
+      invalidateFleetRelatedQueries(queryClient, retired.id);
       toast({
         title: "Bus Retired",
         description: `Bus ${retired.targa} has been marked as retired.`,
@@ -126,10 +139,7 @@ export function useSendToMaintenance() {
   >({
     mutationFn: ({ busId, data }) => busesApi.sendToMaintenance(busId, data),
     onSuccess: (_, { busId }) => {
-      queryClient.invalidateQueries({ queryKey: busKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: busKeys.detail(busId) });
-      queryClient.invalidateQueries({ queryKey: busKeys.maintenanceList(busId) });
-      queryClient.invalidateQueries({ queryKey: busKeys.maintenances() });
+      invalidateFleetRelatedQueries(queryClient, busId);
       toast({
         title: "Sent to Maintenance",
         description: "Bus status updated to maintenance.",
@@ -145,6 +155,9 @@ export function useSendToMaintenance() {
   });
 }
 
+/** Alias for useSendToMaintenance matching naming in fleet domain */
+export const useCreateMaintenance = useSendToMaintenance;
+
 export function useResumeBus() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -152,10 +165,7 @@ export function useResumeBus() {
   return useMutation<unknown, AppError, string>({
     mutationFn: (busId: string) => busesApi.resumeBus(busId),
     onSuccess: (_, busId) => {
-      queryClient.invalidateQueries({ queryKey: busKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: busKeys.detail(busId) });
-      queryClient.invalidateQueries({ queryKey: busKeys.maintenanceList(busId) });
-      queryClient.invalidateQueries({ queryKey: busKeys.maintenances() });
+      invalidateFleetRelatedQueries(queryClient, busId);
       toast({
         title: "Bus Resumed",
         description: "Bus status restored to active.",

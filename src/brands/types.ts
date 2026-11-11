@@ -9,8 +9,11 @@ export interface BrandTokens {
   input: string;
   primary: string;
   primaryForeground: string;
+  primaryHover: string;
   accent: string;
   accentForeground: string;
+  accentStrong: string;
+  accentSoft: string;
   success: string;
   successForeground: string;
   warning: string;
@@ -18,6 +21,12 @@ export interface BrandTokens {
   danger: string;
   dangerForeground: string;
   ring: string;
+  sidebar: string;
+  sidebarForeground: string;
+  sidebarMuted: string;
+  sidebarBorder: string;
+  sidebarActive: string;
+  sidebarActiveForeground: string;
   radius: string;
 }
 

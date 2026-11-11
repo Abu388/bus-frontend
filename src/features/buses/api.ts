@@ -23,6 +23,7 @@ export const busesApi = {
     const payload = {
       ...data,
       route: data.route ? data.route : null,
+      casher: data.casher ? data.casher : null,
     };
     return httpClient.post<PhysicalBus>("/buses/", payload);
   },
@@ -31,6 +32,7 @@ export const busesApi = {
     const payload = {
       ...data,
       ...(data.route !== undefined ? { route: data.route ? data.route : null } : {}),
+      ...(data.casher !== undefined ? { casher: data.casher ? data.casher : null } : {}),
     };
     return httpClient.patch<PhysicalBus>(`/buses/${id}/`, payload);
   },

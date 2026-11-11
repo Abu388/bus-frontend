@@ -8,7 +8,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-1">
+      <div
+        className="livery-stripe fixed inset-x-0 top-0 z-[60] h-1"
+        aria-hidden="true"
+      />
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
       <div className="lg:pl-64 flex flex-col min-h-screen">
         <Topbar onMenuClick={() => setMobileOpen(true)} />

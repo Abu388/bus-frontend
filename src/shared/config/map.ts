@@ -15,6 +15,77 @@ export const ROUTE_URL =
 export const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors';
 
+/**
+ * Google Maps navigation inspired route colours. Kept in one place so every
+ * map (builder, detail, live fleet) renders identical road paths.
+ */
+export const MAP_ROUTE_COLORS = {
+  /** Deep royal-blue outline that gives the path crisp map contrast. */
+  casing: "#185ABC",
+  /** Vibrant Google navigation blue for the active road path. */
+  primary: "#3B82F6",
+  /** Lighter highlight used on top of the primary stroke. */
+  highlight: "#60A5FA",
+  /** Soft blue for straight-line fallbacks / uncomputed segments. */
+  fallback: "#93C5FD",
+  /** Even softer blue for inactive alternative directions. */
+  alternative: "#BFDBFE",
+} as const;
+
+export const MAP_ROUTE_STYLE = {
+  active: {
+    casing: {
+      color: MAP_ROUTE_COLORS.casing,
+      weight: 8,
+      opacity: 0.85,
+      lineCap: "round" as const,
+      lineJoin: "round" as const,
+    },
+    line: {
+      color: MAP_ROUTE_COLORS.primary,
+      weight: 5,
+      opacity: 1,
+      lineCap: "round" as const,
+      lineJoin: "round" as const,
+    },
+  },
+  fallback: {
+    casing: {
+      color: MAP_ROUTE_COLORS.highlight,
+      weight: 6,
+      opacity: 0.6,
+      lineCap: "round" as const,
+      lineJoin: "round" as const,
+    },
+    line: {
+      color: MAP_ROUTE_COLORS.fallback,
+      weight: 4,
+      opacity: 1,
+      dashArray: "6, 8",
+      lineCap: "round" as const,
+      lineJoin: "round" as const,
+    },
+  },
+  alternative: {
+    casing: {
+      color: MAP_ROUTE_COLORS.fallback,
+      weight: 5,
+      opacity: 0.5,
+      lineCap: "round" as const,
+      lineJoin: "round" as const,
+    },
+    line: {
+      color: MAP_ROUTE_COLORS.alternative,
+      weight: 3,
+      opacity: 0.9,
+      dashArray: "6, 8",
+      lineCap: "round" as const,
+      lineJoin: "round" as const,
+    },
+  },
+} as const;
+
+
 export interface MapDefaults {
   center: [number, number];
   zoom: number;

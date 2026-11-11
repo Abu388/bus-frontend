@@ -3,9 +3,13 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFares, useFareHistory, useCreateFare } from "@/features/fares";
+import { useFares, useFareHistory, useCreateFare, type Fare } from "@/features/fares";
 import { useRoutes } from "@/features/routes";
-import { CreateFareSchema, type CreateFareFormData } from "@/features/fares/schemas";
+import {
+  CreateFareSchema,
+  type CreateFareFormData,
+  type CreateFareFormInput,
+} from "@/features/fares/schemas";
 import {
   Card,
   CardHeader,
@@ -35,7 +39,18 @@ import {
   DialogFooter,
 } from "@/shared/ui/dialog";
 import { NavIcon } from "@/shared/ui/icons";
-import { formatETB, formatDateTime } from "@/shared/lib/format";
+import { formatDateTime } from "@/shared/lib/format";
+
+function formatFareAmount(amount: number | string | null | undefined): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (num === null || num === undefined || Number.isNaN(num)) {
+    return "0.00 ETB";
+  }
+  return `${num.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} ETB`;
+}
 
 export default function FaresPage() {
   const [selectedRouteFilter, setSelectedRouteFilter] = React.useState<string>("");
@@ -46,18 +61,20 @@ export default function FaresPage() {
   const routes = routesQuery.data || [];
 
   const faresQuery = useFares({ active: true });
-  const activeFares = faresQuery.data || [];
 
-  const historyQuery = useFareHistory(
-    selectedRouteFilter ? { route: selectedRouteFilter } : undefined
-  );
-  const fareHistory = historyQuery.data || [];
+  const historyQuery = useFareHistory();
+  const filteredHistory = React.useMemo(() => {
+    const history = historyQuery.data ?? [];
+    return selectedRouteFilter
+      ? history.filter((item) => item.route === selectedRouteFilter)
+      : history;
+  }, [historyQuery.data, selectedRouteFilter]);
 
   // Mutation
   const createFareMutation = useCreateFare();
 
   // Form
-  const form = useForm<CreateFareFormData>({
+  const form = useForm<CreateFareFormInput, unknown, CreateFareFormData>({
     resolver: zodResolver(CreateFareSchema),
     defaultValues: {
       route: "",
@@ -65,32 +82,53 @@ export default function FaresPage() {
     },
   });
 
-  const handleOpenDialog = (preselectedRouteId?: string, currentAmount?: string) => {
+  const onSubmit = async (data: CreateFareFormData) => {
+    try {
+      await createFareMutation.mutateAsync(data);
+      setIsChangeDialogOpen(false);
+      form.reset();
+    } catch {
+      // The mutation hook surfaces the backend error in a toast.
+    }
+  };
+
+  const activeFareByRoute = React.useMemo(() => {
+    const map = new Map<string, Fare>();
+    for (const fare of faresQuery.data ?? []) {
+      map.set(fare.route, fare);
+    }
+    return map;
+  }, [faresQuery.data]);
+
+  const handleOpenDialog = (
+    preselectedRouteId?: string,
+    currentAmount?: string
+  ) => {
+    const routeId = preselectedRouteId || routes[0]?.id || "";
+    const existing = activeFareByRoute.get(routeId);
+    const amount =
+      currentAmount !== undefined
+        ? parseFloat(currentAmount)
+        : existing
+          ? parseFloat(existing.amount)
+          : 15;
+
     form.reset({
-      route: preselectedRouteId || (routes[0]?.id ?? ""),
-      amount: currentAmount ? parseFloat(currentAmount) : 15,
+      route: routeId,
+      amount: Number.isFinite(amount) ? amount : 15,
     });
     setIsChangeDialogOpen(true);
   };
 
-  const onSubmit = (data: CreateFareFormData) => {
-    createFareMutation.mutate(data, {
-      onSuccess: () => {
-        setIsChangeDialogOpen(false);
-      },
-    });
+  const handleRouteChange = (routeId: string) => {
+    const existing = activeFareByRoute.get(routeId);
+    form.setValue("route", routeId, { shouldValidate: true });
+    form.setValue(
+      "amount",
+      existing ? parseFloat(existing.amount) : 15,
+      { shouldValidate: true, shouldDirty: true }
+    );
   };
-
-  // Map route IDs to route names
-  const routeMap = React.useMemo(() => {
-    const map = new Map<string, { name: string; number: number }>();
-    for (const r of routes) {
-      if (r.id) {
-        map.set(r.id, { name: r.name, number: r.public_bus_number });
-      }
-    }
-    return map;
-  }, [routes]);
 
   return (
     <div className="space-y-6">
@@ -112,69 +150,110 @@ export default function FaresPage() {
             onClick={() => handleOpenDialog()}
             className="flex items-center gap-2"
           >
-            <span>+</span> Change Fare
+            <span>+</span> Configure Route Fare
           </Button>
         </div>
       </div>
 
-      {/* Active Fares Grid */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Current Active Tariffs
-        </h2>
-        {faresQuery.isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-28 rounded-xl" />
-            ))}
-          </div>
-        ) : activeFares.length === 0 ? (
-          <Card className="p-6 text-center text-muted-foreground border-dashed">
-            <p className="text-sm">No active fares configured. Click &quot;Change Fare&quot; to set up initial route pricing.</p>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {activeFares.map((fare) => {
-              const routeInfo = routeMap.get(fare.route);
-              return (
-                <Card key={fare.id} className="border-border bg-card p-4 space-y-3 relative overflow-hidden">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary ring-1 ring-inset ring-primary/20">
-                        Line {routeInfo?.number ?? "—"}
-                      </span>
-                      <h3 className="text-sm font-semibold text-foreground mt-1 truncate">
-                        {routeInfo?.name ?? "Route"}
-                      </h3>
-                    </div>
-                    <Badge variant="accent" className="text-[10px]">Active</Badge>
-                  </div>
+      {/* Route Fare Directory */}
+      <Card className="border-border bg-card">
+        <CardHeader className="pb-3 border-b border-border">
+          <CardTitle className="text-base font-semibold">
+            Route Fare Directory
+          </CardTitle>
+          <CardDescription>
+            Every corridor has exactly one active tariff. Set a fare for routes
+            showing “Unconfigured”; updating a fare archives the previous
+            version.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {routesQuery.isLoading || faresQuery.isLoading ? (
+            <div className="p-6 space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : routes.length === 0 ? (
+            <div className="p-10 text-center text-muted-foreground">
+              <p className="text-sm">
+                No routes exist yet. Create a route before configuring fares.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Bus Line</TableHead>
+                    <TableHead>Route</TableHead>
+                    <TableHead>Active Fare</TableHead>
+                    <TableHead>Effective Since</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {routes.map((route) => {
+                    const fare = route.id
+                      ? activeFareByRoute.get(route.id)
+                      : undefined;
 
-                  <div>
-                    <div className="text-2xl font-bold tracking-tight text-foreground">
-                      {formatETB(fare.amount)}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Effective since {formatDateTime(fare.effective_from)}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 border-t border-border flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={() => handleOpenDialog(fare.route, fare.amount)}
-                    >
-                      Update Rate
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                    return (
+                      <TableRow key={route.id}>
+                        <TableCell>
+                          <span className="bus-number-badge">
+                            {route.public_bus_number}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm font-semibold text-foreground">
+                            {route.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {fare ? (
+                            <span className="font-semibold text-foreground">
+                              {formatFareAmount(fare.amount)}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">
+                              —
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                          {fare ? formatDateTime(fare.effective_from) : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={fare ? "success" : "warning"}
+                            className="text-[10px]"
+                          >
+                            {fare ? "Configured" : "Unconfigured"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant={fare ? "outline" : "default"}
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() =>
+                              handleOpenDialog(route.id, fare?.amount)
+                            }
+                          >
+                            {fare ? "Update Fare" : "Set Fare"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Fare History Audit Table */}
       <Card className="border-border bg-card">
@@ -214,7 +293,7 @@ export default function FaresPage() {
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>
-          ) : fareHistory.length === 0 ? (
+          ) : filteredHistory.length === 0 ? (
             <div className="p-10 text-center text-muted-foreground">
               <p className="text-sm">No fare history records found.</p>
             </div>
@@ -232,13 +311,20 @@ export default function FaresPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {fareHistory.map((item) => {
+                  {filteredHistory.map((item) => {
                     const isActive = !item.effective_to;
                     return (
                       <TableRow key={item.id}>
                         <TableCell>
-                          <div className="font-medium text-foreground">
-                            {item.public_bus_number ? `Line ${item.public_bus_number}` : "—"}
+                          <div className="flex items-center gap-1.5">
+                            {item.public_bus_number ? (
+                              <>
+                                <span className="bus-number-badge">{item.public_bus_number}</span>
+                                <span className="text-[11px] text-muted-foreground">line</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground truncate max-w-[200px]">
                             {item.route_name || item.route}
@@ -246,7 +332,7 @@ export default function FaresPage() {
                         </TableCell>
                         <TableCell>
                           <span className="font-semibold text-foreground">
-                            {formatETB(item.amount)}
+                            {formatFareAmount(item.amount)}
                           </span>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
@@ -282,7 +368,7 @@ export default function FaresPage() {
       <Dialog open={isChangeDialogOpen} onOpenChange={setIsChangeDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Configure Route Tariff</DialogTitle>
+            <DialogTitle>Configure Route Fare</DialogTitle>
             <DialogDescription>
               Adjust the passenger trip fare in Ethiopian Birr (ETB).
             </DialogDescription>
@@ -296,7 +382,8 @@ export default function FaresPage() {
               </label>
               <select
                 id="route"
-                {...form.register("route")}
+                value={form.watch("route")}
+                onChange={(event) => handleRouteChange(event.target.value)}
                 className="w-full h-9 rounded-md border border-border bg-background px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="">Select a corridor route...</option>
@@ -319,8 +406,8 @@ export default function FaresPage() {
               <Input
                 id="amount"
                 type="number"
-                step="0.5"
-                min="0.5"
+                step="0.01"
+                min="0.01"
                 placeholder="e.g. 15.00"
                 {...form.register("amount", { valueAsNumber: true })}
               />

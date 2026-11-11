@@ -10,6 +10,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  Legend,
 } from "recharts";
 import { useReportsSummary } from "@/features/reports";
 import { useBuses } from "@/features/buses";
@@ -110,11 +111,11 @@ function ReportsContent() {
           [1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)
         ) : (
           <>
-            <Card className="border-border bg-card p-5">
+            <Card className="border-border bg-card before:hidden border-t-[3px] border-t-primary p-5">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Total Gross Revenue
               </span>
-              <div className="text-3xl font-bold tracking-tight text-foreground mt-2">
+              <div className="text-3xl font-bold tracking-tight tabular-nums text-foreground mt-2">
                 {formatETB(totals.revenue)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -122,11 +123,11 @@ function ReportsContent() {
               </p>
             </Card>
 
-            <Card className="border-border bg-card p-5">
+            <Card className="border-border bg-card before:hidden border-t-[3px] border-t-accent-strong p-5">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Passenger Throughput
               </span>
-              <div className="text-3xl font-bold tracking-tight text-foreground mt-2">
+              <div className="text-3xl font-bold tracking-tight tabular-nums text-foreground mt-2">
                 {totals.passengers_count.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -134,11 +135,11 @@ function ReportsContent() {
               </p>
             </Card>
 
-            <Card className="border-border bg-card p-5">
+            <Card className="border-border bg-card before:hidden border-t-[3px] border-t-primary p-5">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Fleet Utilization
               </span>
-              <div className="text-3xl font-bold tracking-tight text-foreground mt-2">
+              <div className="text-3xl font-bold tracking-tight tabular-nums text-foreground mt-2">
                 {summary?.by_bus?.length ?? 0} <span className="text-sm font-normal text-muted-foreground">/ {buses?.length ?? 0} buses</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -177,10 +178,20 @@ function ReportsContent() {
                     axisLine={{ stroke: "var(--border)" }}
                   />
                   <YAxis
+                    yAxisId="left"
                     stroke="var(--muted-foreground)"
                     fontSize={11}
                     tickLine={false}
                     axisLine={{ stroke: "var(--border)" }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="var(--muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={{ stroke: "var(--border)" }}
+                    tickFormatter={(val) => `${val} ETB`}
                   />
                   <Tooltip
                     contentStyle={{
@@ -197,7 +208,21 @@ function ReportsContent() {
                       name === "passengers" ? "Passengers" : "Revenue",
                     ]}
                   />
-                  <Bar dataKey="passengers" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  <Legend wrapperStyle={{ fontSize: "11px" }} />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="passengers"
+                    name="Passengers"
+                    fill="var(--primary)"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    yAxisId="right"
+                    dataKey="revenue"
+                    name="Revenue"
+                    fill="var(--accent-strong)"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

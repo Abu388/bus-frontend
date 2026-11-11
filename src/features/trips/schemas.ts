@@ -3,7 +3,7 @@ import type { components } from "@/types/api";
 
 export type Trip = components["schemas"]["Trip"];
 export type BusTripReport = components["schemas"]["BusTripReport"];
-export type Payment = components["schemas"]["Payment"];
+export type { Payment, TicketSummary } from "@/features/payments";
 
 export const TripFiltersSchema = z.object({
   bus: z.string().optional(),

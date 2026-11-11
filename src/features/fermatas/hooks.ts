@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fermatasApi } from "./api";
 import { fermataKeys } from "./keys";
+import { routeKeys } from "@/features/routes/keys";
+import { stopKeys } from "@/features/stops/keys";
+import { directionKeys } from "@/features/directions/keys";
 import type { Fermata, CreateFermataFormData, UpdateFermataFormData } from "./schemas";
 import { useToast } from "@/shared/ui/toast";
 import { AppError } from "@/shared/api/errors";
@@ -71,23 +74,15 @@ export function useUpdateFermata() {
 
 export function useDeleteFermata() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation<void, AppError, string>({
     mutationFn: (id: string) => fermatasApi.deleteFermata(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: fermataKeys.lists() });
-      toast({
-        title: "Fermata Deleted",
-        description: "The fermata was removed.",
-      });
+      queryClient.invalidateQueries({ queryKey: fermataKeys.all });
+      queryClient.invalidateQueries({ queryKey: routeKeys.all });
+      queryClient.invalidateQueries({ queryKey: stopKeys.all });
+      queryClient.invalidateQueries({ queryKey: directionKeys.all });
     },
-    onError: (error) => {
-      toast({
-        title: "Failed to delete fermata",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+    // Errors are surfaced inline inside the delete confirmation dialog.
   });
 }

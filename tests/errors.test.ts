@@ -46,3 +46,27 @@ describe("HTTP client error normalization", () => {
     expect(err.message).toBe("Network timeout");
   });
 });
+
+describe("HTTP client protected-delete error normalization", () => {
+  it("extracts DRF top-level array validation errors", () => {
+    const err = normalizeError(
+      ["Cannot delete this fermata because it is currently used as a stop on a route."],
+      400
+    );
+    expect(err).toBeInstanceOf(AppError);
+    expect(err.message).toBe(
+      "Cannot delete this fermata because it is currently used as a stop on a route."
+    );
+    expect(err.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("extracts array-valued detail errors", () => {
+    const err = normalizeError(
+      { detail: ["Cannot delete a route that has buses or fares attached to it."] },
+      400
+    );
+    expect(err.message).toBe(
+      "Cannot delete a route that has buses or fares attached to it."
+    );
+  });
+});
